@@ -14,7 +14,8 @@
 <main>
   <h1>Number Line</h1>
   <p class="hero-tagline">Drag the hopper, or tap the big + and &minus; buttons. The badge
-    above it shows how far you have moved from the start.</p>
+    above it shows how far you have moved from the start. Land on the answer and the
+    hopper goes see-through while a magnifier shows the number up close.</p>
 
   <section class="setup" id="setupBar" aria-labelledby="setupTitle">
     <p class="setup-title" id="setupTitle">What should we practice?</p>
@@ -51,11 +52,16 @@
   let nl = null;                 // state for this problem
   let svg = null, arcG = null, hopG = null;
   let badgeG = null, badgeRect = null, badgeText = null;
+  let lensG = null, lensNum = null, lensHandle = null;
   let caption = null, minusBtn = null, plusBtn = null;
   let answered = false;
 
   const NS = 'http://www.w3.org/2000/svg';
-  const W = 560, H = 138, PAD = 26, YB = 78;
+  /* Taller than the line itself: the magnifier floats in the space above
+     it, with room to clear both the badge and the start number. */
+  const W = 560, H = 204, PAD = 26, YB = 150;
+  const LENS_R = 32;              // magnifier radius
+  const LENS_UP = 82;             // how far above the line it floats
 
   renderSetup({
     only: GAME_OPS.line,
@@ -185,6 +191,28 @@
     return b;
   }
 
+  /* A little magnifying glass: a zoomed-in look at the number the hopper
+     is sitting on. Built once per problem, shown by update(). */
+  function buildLens() {
+    const g = s('g', { class: 'line-lens' });
+
+    /* handle first, so the ring covers where it meets the glass */
+    g.appendChild(s('line', {
+      class: 'lens-handle', x1: 0, y1: LENS_R, x2: 0, y2: LENS_R + 22
+    }));
+    g.appendChild(s('circle', { cx: 0, cy: 0, r: LENS_R, class: 'lens-ring' }));
+
+    /* what you see through it: the number, big, resting on the line */
+    g.appendChild(s('text', {
+      x: 0, y: 0, class: 'lens-num', 'text-anchor': 'middle'
+    }, '0'));
+    g.appendChild(s('line', { x1: -20, y1: 14, x2: 20, y2: 14, class: 'lens-base' }));
+    g.appendChild(s('line', { x1: -13, y1: 14, x2: -13, y2: 21, class: 'lens-tick' }));
+    g.appendChild(s('line', { x1: 13, y1: 14, x2: 13, y2: 21, class: 'lens-tick' }));
+    g.appendChild(s('line', { x1: 0, y1: 14, x2: 0, y2: 24, class: 'lens-tick mid' }));
+    return g;
+  }
+
   function drawLine(p, box, api) {
     gameApi = api;
     answered = false;
@@ -239,6 +267,12 @@
     badgeG.appendChild(badgeText);
     svg.appendChild(badgeG);
 
+    /* the magnifier — shown by update() once the hopper is on the answer */
+    lensG = buildLens();
+    lensNum = lensG.querySelector('.lens-num');
+    lensHandle = lensG.querySelector('.lens-handle');
+    svg.appendChild(lensG);
+
     hopG.addEventListener('pointerdown', startHop);
     box.appendChild(svg);
 
@@ -289,6 +323,29 @@
     const bx = Math.max(bw / 2 + 2, Math.min(W - bw / 2 - 2, xOf(nl.pos)));
     badgeG.setAttribute('transform', 'translate(' + bx + ', 6)');
     badgeG.classList.toggle('ready', atTarget());
+
+    /* On the answer? The hopper turns see-through with an outline and the
+       magnifier floats up over the number it landed on. */
+    const on = atTarget();
+    hopG.classList.toggle('at-answer', on);
+    if (lensG) {
+      lensG.classList.toggle('is-on', on);
+      if (on) {
+        const lx = Math.max(LENS_R + 2, Math.min(W - LENS_R - 2, xOf(nl.pos)));
+        const ly = YB - LENS_UP;
+        lensG.setAttribute('transform', 'translate(' + lx + ',' + ly + ')');
+        lensNum.textContent = String(targetPos(nl));
+        /* handle leans from the glass down to the hopper */
+        const hx = xOf(nl.pos) - lx;
+        const hy = YB - ly;
+        const len = Math.hypot(hx, hy) || 1;
+        const ux = hx / len, uy = hy / len;
+        lensHandle.setAttribute('x1', (ux * (LENS_R + 1)).toFixed(1));
+        lensHandle.setAttribute('y1', (uy * (LENS_R + 1)).toFixed(1));
+        lensHandle.setAttribute('x2', (ux * (LENS_R + 22)).toFixed(1));
+        lensHandle.setAttribute('y2', (uy * (LENS_R + 22)).toFixed(1));
+      }
+    }
 
     if (p.op === 'mul') {
       caption.textContent = captionFor(p) + ' \u2014 you\u2019ve taken ' +

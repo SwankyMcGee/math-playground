@@ -67,7 +67,8 @@ const OPS = [
 /* What each game can draw — the generator clamps to
    min(grade range, game ceiling) and the page says so. */
 const GAME_CEILING = {
-  counters: { add: 50, sub: 50 },                    // five ten-frames at most
+  counters: { add: 20, sub: 20 },                    // two ten-frames at most —
+                                                     // fewer counters to drag
   line:     { add: 100, sub: 100, mul: 100, div: 100 },  // a readable axis
   facts:    { add: Infinity, sub: Infinity, mul: Infinity, div: Infinity },
   story:    { add: 1000, sub: 1000, mul: 144, div: 144 }

@@ -888,6 +888,40 @@ body.dragging-active * { cursor: grabbing !important; user-select: none; }
 .line-badge.ready .line-badge-bg { stroke: var(--accent2); stroke-width: 2.5; }
 .line-badge.ready .line-badge-t { fill: var(--accent2); }
 
+/* On the answer: the hopper goes see-through with an outline, and a
+   magnifier floats above the number to show it up close. */
+.at-answer .line-hopper {
+  fill: var(--accent);
+  fill-opacity: .12;
+  stroke: var(--accent2);
+  stroke-width: 3;
+}
+
+.line-lens { display: none; pointer-events: none; }
+.line-lens.is-on { display: inline; }
+
+.lens-ring {
+  fill: var(--surface-2);
+  stroke: var(--accent2);
+  stroke-width: 3;
+}
+
+.lens-handle {
+  stroke: var(--accent2);
+  stroke-width: 6;
+  stroke-linecap: round;
+}
+
+.lens-num {
+  fill: var(--text);
+  font-size: 24px;
+  font-weight: 800;
+}
+
+.lens-base { stroke: var(--dim); stroke-width: 3; stroke-linecap: round; }
+.lens-tick { stroke: var(--dim); stroke-width: 2; }
+.lens-tick.mid { stroke: var(--accent2); stroke-width: 3; }
+
 .line-jumps { fill: var(--dim); font-size: 13px; font-weight: 700; }
 
 .line-hopper {
