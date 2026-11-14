@@ -14,7 +14,8 @@
 <main>
   <h1>Counters</h1>
   <p class="hero-tagline">A virtual ten-frame. Drag counters in and out of the frames,
-    then press Check. Nothing times out.</p>
+    then press Check. The tray always carries spare counters as well, so count the ones
+    you need &mdash; never all of them. Nothing times out.</p>
 
   <section class="setup" id="setupBar" aria-labelledby="setupTitle">
     <p class="setup-title" id="setupTitle">What should we practice?</p>
@@ -64,9 +65,23 @@
     return -1;
   }
 
-  /* Frames hold at least the starting amount and the answer. */
+  /* Frames hold the starting amount, the answer, and room for every
+     spare, so even a wrong guess still fits on the board.
+
+     Every problem carries a few extra counters with it: the tray always
+     holds more than the problem needs, so it is a counting job rather
+     than "drag the whole pile in". The spares look exactly like the
+     rest — the student has to count to know which ones to use. */
+  const SPARE_MIN = 3, SPARE_MAX = 5;
+
+  function sparesFor() {
+    return SPARE_MIN + Math.floor(Math.random() * (SPARE_MAX - SPARE_MIN + 1));
+  }
+
   function newBoard(p) {
-    const frames = Math.max(1, Math.ceil(Math.max(p.a, p.answer) / 10));
+    const spares = sparesFor();
+    const room = p.op === 'add' ? p.a + p.b + spares : p.a;
+    const frames = Math.max(1, Math.ceil(room / 10));
     const b = {
       op: p.op,
       answer: p.answer,
@@ -74,12 +89,29 @@
       cells: frames * 10,
       filled: new Set(),
       fromTray: new Set(),
-      tray: 0,
+      tray: (p.op === 'add' ? p.b : 0) + spares,
+      spares: spares,
+      out: 0,             // subtracting: how many have left the frames
       locked: false
     };
     for (let i = 0; i < p.a; i++) b.filled.add(i);
-    if (p.op === 'add') b.tray = p.b;   // sub starts with none taken away
     return b;
+  }
+
+  /* A gentle nudge — never the word "wrong", never a buzzer. */
+  function nudge(text) {
+    const fb = document.getElementById('feedback');
+    if (!fb) return;
+    fb.className = 'feedback neutral nudge';
+    fb.textContent = text;
+  }
+
+  function clearNudge() {
+    const fb = document.getElementById('feedback');
+    if (fb && fb.classList.contains('nudge')) {
+      fb.className = 'feedback';
+      fb.textContent = '';
+    }
   }
 
   /* ---------- Drag and drop ----------
@@ -98,6 +130,7 @@
     if (typeof e.button === 'number' && e.button !== 0) return;
     if (e.pointerId === undefined) return;
     lastDragEnd = 0;                       // a fresh press clears the guard
+    clearNudge();
     const host = e.currentTarget;
     drag = {
       src: src, host: host, pid: e.pointerId,
@@ -135,7 +168,9 @@
     let ok = null;
     if (hit && hit.cell) {
       const idx = Number(hit.cell.dataset.index);
-      if (!board.filled.has(idx) && idx !== drag.src.idx) ok = hit.cell;
+      /* a spare from the tray has nothing to do in a frame (subtraction) */
+      const spareIn = drag.src.kind === 'tray' && board.op === 'sub' && board.out < 1;
+      if (!spareIn && !board.filled.has(idx) && idx !== drag.src.idx) ok = hit.cell;
     } else if (hit && hit.tray && drag.src.kind === 'cell') {
       ok = hit.tray;
     }
@@ -151,9 +186,14 @@
       if (board.filled.has(target.idx) || target.idx === src.idx) return false;
       if (src.kind === 'tray') {
         if (board.tray < 1) return false;
+        if (board.op === 'sub' && board.out < 1) {
+          nudge('Those are spares \u2014 take counters out of the frames instead.');
+          return false;
+        }
         board.tray -= 1;
         board.filled.add(target.idx);
-        board.fromTray.add(target.idx);
+        if (board.op === 'add') board.fromTray.add(target.idx);
+        else board.out -= 1;
       } else {
         board.filled.delete(src.idx);
         board.fromTray.delete(src.idx);
@@ -166,6 +206,7 @@
       board.filled.delete(src.idx);
       board.fromTray.delete(src.idx);
       board.tray += 1;
+      if (board.op === 'sub') board.out += 1;
       return true;
     }
     return false;
@@ -250,9 +291,11 @@
           }));
           btn.addEventListener('click', () => {
             if (board.locked || afterDrag()) return;
+            clearNudge();
             board.filled.delete(idx);
             board.fromTray.delete(idx);
             board.tray += 1;
+            if (board.op === 'sub') board.out += 1;
             drawBoard();
           });
           cell.appendChild(btn);
@@ -270,9 +313,10 @@
     const tl = document.createElement('p');
     tl.className = 'tray-label';
     tl.textContent = board.op === 'add'
-      ? (board.tray ? 'Drag a counter into a frame' : 'All counters are in the frames')
-      : (board.tray ? 'Drag a counter back, or tap it to put it back'
-                    : 'Nothing taken away yet \u2014 drag one out');
+      ? (board.tray ? 'Drag the counters you need into the frames'
+                    : 'All counters are in the frames')
+      : (board.out ? 'Drag a counter back, or tap it to put it back'
+                   : 'Spare counters \u2014 take counters out of the frames');
     const row = document.createElement('div');
     row.className = 'tray-row';
     for (let i = 0; i < board.tray; i++) {
@@ -280,18 +324,29 @@
       btn.type = 'button';
       btn.className = 'counter-btn';
       btn.disabled = board.locked;
-      btn.setAttribute('aria-label', 'Drag this counter into a frame, or tap to drop it in');
+      btn.setAttribute('aria-label',
+        board.op === 'add'
+          ? 'Drag this counter into a frame, or tap to drop it in'
+          : (board.out
+              ? 'Drag this counter back into a frame, or tap to put it back'
+              : 'Spare counter \u2014 it stays in the tray'));
       btn.innerHTML = counterMarkup(true);
       btn.addEventListener('pointerdown', (e) => startDrag(e, {
         kind: 'tray', idx: -1, group2: true, el: btn
       }));
       btn.addEventListener('click', () => {
         if (board.locked || afterDrag()) return;
+        clearNudge();
+        if (board.op === 'sub' && board.out < 1) {
+          nudge('Those are spares \u2014 take counters out of the frames instead.');
+          return;
+        }
         const at = firstEmpty();
         if (at < 0) return;
         board.tray -= 1;
         board.filled.add(at);
-        board.fromTray.add(at);
+        if (board.op === 'add') board.fromTray.add(at);
+        else board.out -= 1;
         drawBoard();
       });
       row.appendChild(btn);
@@ -332,7 +387,7 @@
     page: 'counters.html',
     ops: GAME_OPS.counters,
     prompt: (p) => p.op === 'add'
-      ? 'Drag the waiting counters into the frames, then press Check.'
+      ? 'Drag the counters you need into the frames, then press Check.'
       : 'Drag counters out of the frames, then press Check.',
     hintFor: (p) => p.op === 'add'
       ? 'Drag ' + p.b + ' counters into the frames. Then count every counter in the frames.'
@@ -355,9 +410,10 @@
       for (let i = 0; i < p.answer; i++) board.filled.add(i);
       if (p.op === 'add') {
         for (let i = p.a; i < p.answer; i++) board.fromTray.add(i);
-        board.tray = 0;
+        board.tray = board.spares;      // the ones that weren't needed
       } else {
-        board.tray = p.b;         // show what was taken away
+        board.out = p.b;
+        board.tray = board.spares + p.b;   // spares plus what was taken away
       }
       drawBoard();
     }

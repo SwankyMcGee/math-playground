@@ -11,7 +11,7 @@ back to the Toolshed site, and only when someone clicks it.
 
 | File | Game | What the student does |
 | --- | --- | --- |
-| `counters.html` | **Counters** | A virtual ten-frame. Drag counters in and out of the frames (a plain tap works too), then press Check. Numbers stay small — up to 20, so never more than two frames and far fewer drags. |
+| `counters.html` | **Counters** | A virtual ten-frame. Drag counters in and out of the frames (a plain tap works too), then press Check. Numbers stay small — up to 20 — and the tray always carries **3–5 spare counters** as well, so the student counts the ones they need instead of dragging the whole pile in. |
 | `number-line.html` | **Number Line** | Drag the hopper or tap the big + / − buttons. The badge above shows how far it has moved from the start (−3, +7, 0). Land on the answer and the hopper goes see-through with an outline while a magnifier shows the number up close. The choices unlock only when the hopper reaches the landing. |
 | `facts.html` | **7+5 Facts** | One fact at a time with three big choices and a Hint button. |
 | `story.html` | **Story Problems** | Short picture stories with scene icons and a proportional bar model. |
@@ -64,8 +64,11 @@ and the site never read fields they do not know.
 
 **Number ranges** come from `GAME_CEILING` in `math.js` and are clamped against
 the grade's own range (the setup note prints whichever is smaller). Counters is
-deliberately capped at **20** so the board never exceeds two ten-frames — that
-keeps the dragging to a minimum.
+deliberately capped at **20** so the numbers stay small — that keeps the
+dragging to a minimum. Its tray also carries **3–5 spares** (`SPARE_MIN` /
+`SPARE_MAX` in `counters.html`) that are not part of the problem, and the
+frames are sized to hold `answer + spares`, so a wrong guess still fits
+(three ten-frames at most).
 
 ## Notes
 
