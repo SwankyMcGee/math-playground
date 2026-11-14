@@ -1,0 +1,1077 @@
+/* ============================================================
+   Math Playground — chrome, palettes and game styles for the
+   four Toolshed math games (Counters, Number Line, Facts,
+   Story Problems). Shares the 11 palettes with the Work Cycle
+   Timer and the Toolshed site: keep the html[data-theme]
+   blocks in sync with site.css (SwankyMcGee.github.io) and
+   styles.css (work-cycle-timer). --accent2 is the palette's
+   second accent (THEMES chips[4]) and marks "the other group"
+   in two-group visuals.
+   ============================================================ */
+
+:root {
+  --bg: #f2f6f8;
+  --surface: #ffffff;
+  --surface-2: #e9eff3;
+  --text: #33414d;
+  --dim: #6b7c8a;
+  --border: #d5dfe6;
+  --accent: #4d84a6;
+  --accent2: #628f5d;
+  --hold-bg: #fdf3dd;
+  --hold-text: #7a5c1e;
+  --hold-border: #eeddb3;
+}
+
+* { box-sizing: border-box; }
+
+/* Author display beats the UA's [hidden] — the lesson from the site:
+   any element we give display:flex needs this guard. */
+[hidden] { display: none !important; }
+
+html { font-size: 16px; }
+
+body {
+  margin: 0;
+  font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.55;
+  transition: background-color .35s ease, color .35s ease;   /* gentle palette switch */
+}
+
+a { color: var(--accent); }
+
+.visually-hidden {
+  position: absolute;
+  width: 1px; height: 1px;
+  margin: -1px; padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ---------- Header / nav ---------- */
+
+.site-head {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: .7rem 1.2rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: .4rem 1rem;
+  align-items: center;
+}
+
+.brand {
+  font-weight: 800;
+  text-decoration: none;
+  color: var(--text);
+}
+
+.brand .brand-sub { font-weight: 500; color: var(--dim); }
+
+.site-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .25rem .9rem;
+  font-size: .92rem;
+}
+
+.site-nav a { text-decoration: none; color: var(--dim); }
+.site-nav a:hover { color: var(--accent); }
+.site-nav a[aria-current="page"] { color: var(--text); font-weight: 700; }
+.site-nav a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.head-tools {
+  margin-left: auto;
+  display: flex;
+  gap: .5rem;
+  align-items: center;
+}
+
+main {
+  max-width: 60rem;
+  margin: 0 auto;
+  padding: 1.2rem 1.2rem 2.5rem;
+}
+
+h1 { font-size: 1.7rem; margin: .6rem 0 .4rem; }
+h2 { font-size: 1.2rem; margin: 1.4rem 0 .5rem; }
+p { margin: .45rem 0; }
+
+/* ---------- Footer ---------- */
+
+.site-foot {
+  max-width: 62rem;
+  margin: 0 auto;
+  padding: 1rem 1.2rem 2rem;
+  color: var(--dim);
+  font-size: .87rem;
+  border-top: 1px solid var(--border);
+}
+
+/* ---------- Hold-to-activate (kid-safe buttons) ----------
+   Each holdable button sets --hold-dur (1s home/skip, 3s gear);
+   the .holding class runs the fill for that long. */
+
+.hold-btn {
+  --hold-dur: 1s;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  font: inherit;
+  font-size: .92rem;
+  font-weight: 600;
+  color: var(--text);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: .34rem .8rem;
+  min-height: 40px;
+  cursor: pointer;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  overflow: hidden;
+}
+
+.hold-btn:hover { border-color: var(--accent); }
+.hold-btn.holding { border-color: var(--accent); color: var(--accent); }
+.hold-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.hold-btn .hold-emoji { font-size: 1.05rem; }
+
+.hold-track {
+  position: absolute;
+  left: 7px;
+  right: 7px;
+  bottom: 4px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.hold-fill {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: var(--accent);
+}
+
+.holding .hold-fill {
+  animation: holdFill var(--hold-dur, 1s) linear forwards;
+}
+
+@keyframes holdFill {
+  from { width: 0; }
+  to   { width: 100%; }
+}
+
+/* ---------- Header palette picker (math.js injects this) ---------- */
+
+.theme-wrap {
+  position: relative;
+}
+
+.theme-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  font: inherit;
+  font-size: .92rem;
+  font-weight: 600;
+  color: var(--text);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: .34rem .8rem;
+  min-height: 40px;
+  cursor: pointer;
+}
+
+.theme-btn:hover { border-color: var(--accent); }
+
+.theme-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.theme-panel {
+  position: absolute;
+  right: 0;
+  top: calc(100% + .45rem);
+  z-index: 30;
+  width: min(21.5rem, calc(100vw - 2rem));
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, .15);
+  padding: .5rem;
+}
+
+.theme-opt {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .7rem;
+  width: 100%;
+  font: inherit;
+  font-size: .95rem;
+  text-align: left;
+  color: var(--text);
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  padding: .45rem .6rem;
+  cursor: pointer;
+}
+
+.theme-opt:hover { background: var(--surface-2); }
+
+.theme-opt.active {
+  border-color: var(--accent);
+  background: var(--surface-2);
+}
+
+.theme-opt:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+.theme-name { flex: 1; }
+
+.theme-chips {
+  display: inline-flex;
+  gap: 3px;
+  flex: none;
+}
+
+.theme-chip {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+}
+
+/* ---------- Cards ---------- */
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 1rem 1.1rem;
+}
+
+.card h3 { margin: 0 0 .3rem; font-size: 1.05rem; }
+.card p { color: var(--dim); font-size: .93rem; }
+
+/* ---------- Home: hero + game chooser ---------- */
+
+.hero {
+  text-align: center;
+  padding: .8rem 0 .4rem;
+}
+
+.hero-art { display: inline-block; }
+.hero-art svg { width: min(300px, 70vw); height: auto; }
+
+.hero-tagline {
+  color: var(--dim);
+  font-size: 1.02rem;
+  margin: .3rem 0 0;
+}
+
+.game-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: .9rem;
+  margin-top: .9rem;
+}
+
+.game-card {
+  display: flex;
+  flex-direction: column;
+  gap: .5rem;
+  text-decoration: none;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 1rem 1.1rem;
+  transition: border-color .15s ease, transform .15s ease;
+}
+
+.game-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+.game-card:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.game-card .gc-icon { width: 44px; height: 44px; }
+.game-card h3 { margin: 0; font-size: 1.05rem; }
+.game-card p { margin: 0; color: var(--dim); font-size: .92rem; flex: 1; }
+.game-card .gc-go { color: var(--accent); font-weight: 700; font-size: .93rem; }
+
+/* ---------- Home: continue strip (last game played) ---------- */
+
+.continue-strip {
+  display: flex;
+  align-items: center;
+  gap: .7rem;
+  margin-top: 1rem;
+  padding: .8rem 1rem;
+  text-decoration: none;
+  color: var(--text);
+  background: var(--surface);
+  border: 1.5px solid var(--accent);
+  border-radius: 14px;
+}
+
+.continue-strip:hover { background: var(--surface-2); }
+.continue-strip:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.continue-strip .cs-emoji { color: var(--accent); font-size: 1.1rem; }
+.continue-strip .cs-text { flex: 1; font-size: .97rem; }
+
+/* ---------- Setup bar (grade + operations) ---------- */
+
+.setup {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: .9rem 1.1rem;
+  margin-top: 1rem;
+}
+
+.setup-title {
+  font-weight: 700;
+  font-size: .95rem;
+  margin: 0 0 .5rem;
+}
+
+.setup-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .45rem;
+  align-items: center;
+  margin-bottom: .55rem;
+}
+
+.setup-label {
+  font-size: .85rem;
+  font-weight: 700;
+  color: var(--dim);
+  width: 100%;
+  margin-bottom: .1rem;
+}
+
+.chip {
+  font: inherit;
+  font-size: .93rem;
+  font-weight: 600;
+  color: var(--text);
+  background: var(--surface-2);
+  border: 1.5px solid var(--border);
+  border-radius: 999px;
+  padding: .38rem .9rem;
+  min-height: 42px;
+  cursor: pointer;
+}
+
+.chip:hover { border-color: var(--accent); }
+.chip:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+.chip[aria-pressed="true"] {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #ffffff;
+}
+
+/* On the four dark palettes the accent is light — white text on it
+   would fail, so pressed chips switch to a dark label there. */
+html[data-theme="high"] .chip[aria-pressed="true"],
+html[data-theme="dark"] .chip[aria-pressed="true"],
+html[data-theme="midnight"] .chip[aria-pressed="true"],
+html[data-theme="warm"] .chip[aria-pressed="true"] {
+  color: #0b0d10;
+}
+
+.chip[disabled] {
+  opacity: .45;
+  cursor: not-allowed;
+}
+
+.setup-note {
+  font-size: .87rem;
+  color: var(--dim);
+  margin: .3rem 0 0;
+}
+
+/* ---------- Game page layout ---------- */
+
+.game-stage {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: clamp(1rem, 3vw, 1.8rem);
+  margin-top: 1rem;
+  text-align: center;
+}
+
+.problem {
+  font-size: clamp(2rem, 7vw, 3.2rem);
+  font-weight: 800;
+  letter-spacing: .02em;
+  margin: .2rem 0 .6rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.problem .op { color: var(--accent); padding: 0 .12em; }
+
+.prompt-line {
+  color: var(--dim);
+  font-size: .97rem;
+  margin: 0 0 .8rem;
+  min-height: 1.5em;
+}
+
+/* Big answer choices — one row of up to 4, wrapping. */
+.choices {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: .7rem;
+  margin: .8rem 0 .4rem;
+}
+
+.choice {
+  font: inherit;
+  font-size: clamp(1.3rem, 4vw, 1.8rem);
+  font-weight: 800;
+  color: var(--text);
+  background: var(--surface-2);
+  border: 2px solid var(--border);
+  border-radius: 14px;
+  padding: .55rem 1.3rem;
+  min-width: 5.2rem;
+  min-height: 60px;
+  cursor: pointer;
+  font-variant-numeric: tabular-nums;
+}
+
+.choice:hover { border-color: var(--accent); }
+.choice:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+.choice.correct {
+  border-color: var(--accent2);
+  background: var(--surface-2);
+  color: var(--accent2);
+}
+
+.choice.soft { opacity: .5; }        /* not the answer — stays visible, no red */
+
+/* Feedback line: gentle, never a buzzer. */
+.feedback {
+  min-height: 1.6em;
+  font-size: 1.02rem;
+  font-weight: 600;
+  color: var(--accent2);
+  margin: .3rem 0 0;
+}
+
+.feedback.neutral { color: var(--dim); font-weight: 500; }
+
+.stage-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: .7rem;
+  margin-top: 1rem;
+}
+
+/* Plain tap buttons (not hold) for in-game flow. */
+.btn {
+  font: inherit;
+  font-size: .97rem;
+  font-weight: 700;
+  color: var(--text);
+  background: var(--surface-2);
+  border: 1.5px solid var(--border);
+  border-radius: 999px;
+  padding: .55rem 1.3rem;
+  min-height: 46px;
+  cursor: pointer;
+}
+
+.btn:hover { border-color: var(--accent); }
+.btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.btn.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #ffffff;
+}
+
+html[data-theme="high"] .btn.primary,
+html[data-theme="dark"] .btn.primary,
+html[data-theme="midnight"] .btn.primary,
+html[data-theme="warm"] .btn.primary {
+  color: #0b0d10;
+}
+
+.btn[disabled] { opacity: .5; cursor: default; }
+
+/* ---------- Counters game (virtual manipulative) ---------- */
+
+.counter-boards {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: .8rem;
+  margin: .6rem 0 .3rem;
+}
+
+.board {
+  background: var(--surface-2);
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  padding: .5rem;
+}
+
+.board-label {
+  font-size: .8rem;
+  font-weight: 700;
+  color: var(--dim);
+  margin: 0 0 .35rem;
+  text-align: center;
+}
+
+.ten-frame {
+  display: grid;
+  grid-template-columns: repeat(5, 34px);
+  grid-auto-rows: 34px;
+  gap: 5px;
+}
+
+.cell {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  display: grid;
+  place-items: center;
+}
+
+.counter {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 2px solid rgba(0, 0, 0, .18);
+}
+
+.counter.group2 { background: var(--accent2); }
+
+/* ---------- Number line game ---------- */
+
+.line-wrap { margin: .5rem auto .2rem; max-width: 560px; }
+.line-wrap svg { width: 100%; height: auto; display: block; }
+
+.line-base { stroke: var(--dim); stroke-width: 3; stroke-linecap: round; }
+.line-tick { stroke: var(--dim); stroke-width: 2; }
+.line-tick.minor { stroke-width: 1; opacity: .5; }
+.line-tick.major { stroke-width: 2; }
+.line-num { fill: var(--dim); font-size: 15px; font-weight: 600; }
+.line-hnum { fill: var(--text); font-size: 16px; font-weight: 800; }
+.line-q { fill: var(--accent2); font-size: 19px; font-weight: 800; }
+.line-hopper {
+  fill: var(--accent);
+  stroke: var(--surface);
+  stroke-width: 3;
+  transition: cx .3s ease, cy .3s ease;
+}
+.line-arc {
+  fill: none;
+  stroke: var(--accent2);
+  stroke-width: 3;
+  stroke-dasharray: 6 5;
+  stroke-linecap: round;
+}
+.line-target {
+  fill: none;
+  stroke: var(--accent2);
+  stroke-width: 3;
+  stroke-dasharray: 4 4;
+}
+
+/* ---------- Story problems (schema bar model) ---------- */
+
+.story-scene {
+  display: flex;
+  justify-content: center;
+  gap: .8rem;
+  flex-wrap: wrap;
+  margin: .4rem 0 .8rem;
+}
+
+.scene-icon {
+  background: var(--surface-2);
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  padding: .5rem .8rem;
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.scene-icon svg { width: 30px; height: 30px; flex: none; }
+
+.story-text {
+  font-size: 1.12rem;
+  max-width: 34em;
+  margin: 0 auto .8rem;
+}
+
+/* Bar model: whole bar over part bars (schema-based instruction). */
+.bar-model { max-width: 560px; margin: 0 auto .9rem; }
+
+.bar-row { display: flex; gap: 4px; margin-bottom: 4px; }
+.bar-row:last-child { margin-bottom: 0; }
+
+.bar {
+  border-radius: 6px;
+  min-height: 34px;
+  min-width: 26px;
+  flex: 1 1 0;               /* width is proportional to flex-grow */
+  display: grid;
+  place-items: center;
+  font-size: .85rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  border: 1.5px solid transparent;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.bar.whole { background: var(--accent); color: #ffffff; }
+.bar.part1 { background: var(--surface-2); border-color: var(--accent); color: var(--text); }
+.bar.part2 { background: var(--surface-2); border-color: var(--accent2); color: var(--text); }
+.bar.unknown { background: var(--surface-2); border: 1.5px dashed var(--dim); color: var(--dim); }
+
+html[data-theme="high"] .bar.whole,
+html[data-theme="dark"] .bar.whole,
+html[data-theme="midnight"] .bar.whole,
+html[data-theme="warm"] .bar.whole {
+  color: #0b0d10;
+}
+
+/* ---------- Round progress dots ---------- */
+
+.progress {
+  display: flex;
+  justify-content: center;
+  gap: .45rem;
+  margin-top: .9rem;
+}
+
+.pdot {
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: var(--surface-2);
+  border: 1.5px solid var(--border);
+}
+
+.pdot.done { background: var(--accent2); border-color: var(--accent2); }
+.pdot.now { border-color: var(--accent); background: var(--surface); }
+
+.progress-label {
+  font-size: .83rem;
+  color: var(--dim);
+  margin-top: .35rem;
+  text-align: center;
+}
+
+/* ---------- Game visual area, hint, extra controls ---------- */
+
+.visual { margin: .2rem 0 .5rem; }
+
+.hint-line {
+  max-width: 34em;
+  margin: .6rem auto 0;
+  font-size: .97rem;
+  color: var(--dim);
+  background: var(--surface-2);
+  border: 1px dashed var(--border);
+  border-radius: 10px;
+  padding: .55rem .9rem;
+  text-align: left;
+}
+
+.choice.tried { opacity: .4; }   /* "not that one" — no red, no buzzer */
+
+.check-row {
+  display: flex;
+  justify-content: center;
+  gap: .7rem;
+  margin-top: .8rem;
+}
+
+.count-line {
+  font-size: .97rem;
+  font-weight: 700;
+  color: var(--text);
+  margin: .6rem 0 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.model-caption {
+  font-size: .8rem;
+  font-weight: 700;
+  color: var(--dim);
+  margin: 0 0 .3rem;
+  text-align: center;
+}
+
+/* ---------- Counters: tray of waiting / taken-away counters ---------- */
+
+.counter-tray {
+  background: var(--surface-2);
+  border: 1.5px dashed var(--border);
+  border-radius: 12px;
+  padding: .5rem .7rem;
+  margin-top: .7rem;
+}
+
+.tray-label {
+  font-size: .8rem;
+  font-weight: 700;
+  color: var(--dim);
+  margin: 0 0 .35rem;
+  text-align: center;
+}
+
+.tray-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: .45rem;
+  min-height: 36px;
+}
+
+.tray-empty { font-size: .87rem; color: var(--dim); }
+
+.counter-btn {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  background: none;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.counter-btn:hover .counter { transform: scale(1.14); }
+.counter-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.counter { transition: transform .12s ease; }
+
+/* ---------- Settings row (grade/ops on every game page) ---------- */
+
+.playing-as {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .5rem;
+  align-items: center;
+  justify-content: center;
+  font-size: .9rem;
+  color: var(--dim);
+  margin-top: .7rem;
+}
+
+.playing-as strong { color: var(--text); }
+
+/* ---------- Home background patterns (toggleable) ----------
+   Whisper-quiet math motif, home page only. Toggle lives in the
+   palette panel ("Background patterns") and shares the site's
+   homeMotifs setting. Low/high contrast get no pattern. */
+
+body.home::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-repeat: repeat;
+  background-size: 220px 220px;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><g fill='none' stroke='%23808080' stroke-opacity='0.13' stroke-width='2' stroke-linecap='round'><path d='M30 30 h16 M38 22 v16'/><path d='M150 40 h14'/><circle cx='170' cy='150' r='7'/><path d='M45 140 h16 M45 154 h16 M48 143 l10 8 M58 143 l-10 8'/><path d='M110 95 h14 M117 88 v14'/><path d='M95 185 h14'/></g></svg>");
+}
+
+html.motifs-off body.home::before { display: none; }
+html[data-theme="low"] body.home::before,
+html[data-theme="high"] body.home::before { display: none; }
+
+/* ---------- Score + round-complete screen ---------- */
+
+.score-pill {
+  margin: 0 0 .3rem;
+  text-align: right;
+  font-size: .92rem;
+  font-weight: 700;
+  color: var(--dim);
+}
+
+.round-done { padding: .4rem 0 .2rem; }
+.rd-emoji { font-size: 2.6rem; line-height: 1.1; }
+.rd-title { font-size: 1.5rem; margin: .35rem 0 .3rem; }
+.rd-line { font-size: 1.05rem; margin: .15rem 0; }
+.rd-line strong { color: var(--accent2); }
+.rd-total { color: var(--dim); font-size: .95rem; margin: .15rem 0 .45rem; }
+.rd-ask { font-weight: 700; margin: .2rem 0 .1rem; }
+
+/* ---------- Locked choices (not at the landing yet) ---------- */
+
+.choice.is-locked { opacity: .45; cursor: not-allowed; }
+
+/* ---------- Counters: drag and drop ---------- */
+
+.counter-btn { touch-action: none; }
+.counter-btn.drag-src { opacity: .3; }
+
+.drag-ghost {
+  position: fixed;
+  z-index: 100;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+}
+
+.cell.drop-ok {
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 2px var(--accent);
+}
+
+.counter-tray.drop-ok { border-color: var(--accent); }
+
+body.dragging-active,
+body.dragging-active * { cursor: grabbing !important; user-select: none; }
+
+/* ---------- Number line: move controls + distance badge ---------- */
+
+.hop-btns {
+  display: flex;
+  justify-content: center;
+  gap: .8rem;
+  margin-top: .7rem;
+}
+
+.hop-btn {
+  min-width: 66px;
+  min-height: 52px;
+  font-size: 1.35rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.line-badge-bg {
+  fill: var(--surface-2);
+  stroke: var(--border);
+  stroke-width: 1.5;
+}
+
+.line-badge-t {
+  fill: var(--text);
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.line-badge.ready .line-badge-bg { stroke: var(--accent2); stroke-width: 2.5; }
+.line-badge.ready .line-badge-t { fill: var(--accent2); }
+
+.line-jumps { fill: var(--dim); font-size: 13px; font-weight: 700; }
+
+.line-hopper {
+  cursor: grab;
+  touch-action: none;
+}
+
+.hop-hit {
+  fill: none;
+  pointer-events: all;
+  cursor: grab;
+  touch-action: none;
+}
+
+.hop-hit:active,
+.line-hopper:active { cursor: grabbing; }
+
+/* ---------- Shared color palettes (all 11) ----------
+   math.js sets html[data-theme] before first paint. These blocks
+   mirror site.css (SwankyMcGee.github.io) exactly, plus --accent2
+   = the palette's second accent (THEMES chips[4]) used for the
+   "other group" in two-group visuals. */
+
+html[data-theme="calm"] {
+  --bg: #f2f6f8;
+  --surface: #ffffff;
+  --surface-2: #e9eff3;
+  --text: #33414d;
+  --dim: #6b7c8a;
+  --border: #d5dfe6;
+  --accent: #4d84a6;
+  --accent2: #628f5d;
+  --hold-bg: #fdf3dd;
+  --hold-text: #7a5c1e;
+  --hold-border: #eeddb3;
+}
+
+html[data-theme="lavender"] {
+  --bg: #f5f3fb;
+  --surface: #ffffff;
+  --surface-2: #ece8f7;
+  --text: #3d3a52;
+  --dim: #75708f;
+  --border: #ddd7ef;
+  --accent: #7a6fc0;
+  --accent2: #6a9a76;
+  --hold-bg: #fdf3dd;
+  --hold-text: #7a5c1e;
+  --hold-border: #eeddb3;
+}
+
+html[data-theme="mint"] {
+  --bg: #eef8f3;
+  --surface: #ffffff;
+  --surface-2: #e0f0e8;
+  --text: #2f4640;
+  --dim: #648076;
+  --border: #cfe6dc;
+  --accent: #35837e;
+  --accent2: #6f9a58;
+  --hold-bg: #fdf3dd;
+  --hold-text: #7a5c1e;
+  --hold-border: #eeddb3;
+}
+
+html[data-theme="peach"] {
+  --bg: #fdf6ef;
+  --surface: #fffdfb;
+  --surface-2: #f9ece0;
+  --text: #4d3f34;
+  --dim: #8a7566;
+  --border: #f0e0d0;
+  --accent: #c26a3c;
+  --accent2: #7a9a5a;
+  --hold-bg: #fdf3dd;
+  --hold-text: #7a5c1e;
+  --hold-border: #eeddb3;
+}
+
+html[data-theme="rose"] {
+  --bg: #fdf4f6;
+  --surface: #ffffff;
+  --surface-2: #f9e7ec;
+  --text: #4f3540;
+  --dim: #8c6b78;
+  --border: #f2dae1;
+  --accent: #c25f7e;
+  --accent2: #6f9466;
+  --hold-bg: #fdf3dd;
+  --hold-text: #7a5c1e;
+  --hold-border: #eeddb3;
+}
+
+html[data-theme="ocean"] {
+  --bg: #eef8fa;
+  --surface: #ffffff;
+  --surface-2: #dff0f4;
+  --text: #2c4750;
+  --dim: #5f7f89;
+  --border: #cfe6eb;
+  --accent: #2f87a3;
+  --accent2: #5f9a6a;
+  --hold-bg: #fdf3dd;
+  --hold-text: #7a5c1e;
+  --hold-border: #eeddb3;
+}
+
+html[data-theme="low"] {
+  --bg: #eef1f3;
+  --surface: #f6f8f9;
+  --surface-2: #eaedef;
+  --text: #5b6570;
+  --dim: #838d97;
+  --border: #e2e6e9;
+  --accent: #94b4c3;
+  --accent2: #a9c5a5;
+  --hold-bg: #f4efe3;
+  --hold-text: #8a8172;
+  --hold-border: #e8e0cf;
+}
+
+html[data-theme="high"] {
+  --bg: #000000;
+  --surface: #0b0d10;
+  --surface-2: #16191e;
+  --text: #ffffff;
+  --dim: #d0d6dc;
+  --border: #ffffff;
+  --accent: #56e0ff;
+  --accent2: #b7ff5e;
+  --hold-bg: #2a2105;
+  --hold-text: #ffe066;
+  --hold-border: #ffe066;
+}
+
+html[data-theme="dark"] {
+  --bg: #151a20;
+  --surface: #1e242b;
+  --surface-2: #252c34;
+  --text: #e7edf2;
+  --dim: #9aa7b3;
+  --border: #323b45;
+  --accent: #6fa9c7;
+  --accent2: #8fbf88;
+  --hold-bg: #3a3320;
+  --hold-text: #f0dca6;
+  --hold-border: #5c5030;
+}
+
+html[data-theme="midnight"] {
+  --bg: #0a0f1e;
+  --surface: #121a30;
+  --surface-2: #1a2440;
+  --text: #e3e9f7;
+  --dim: #9aa6c4;
+  --border: #2c3a5e;
+  --accent: #6fa8ff;
+  --accent2: #67d6a5;
+  --hold-bg: #1c2745;
+  --hold-text: #a9c6f5;
+  --hold-border: #3d5585;
+}
+
+html[data-theme="warm"] {
+  --bg: #211a14;
+  --surface: #2b221a;
+  --surface-2: #352a20;
+  --text: #f0e6da;
+  --dim: #b3a291;
+  --border: #4a3c2e;
+  --accent: #d9a05f;
+  --accent2: #93b877;
+  --hold-bg: #3a3020;
+  --hold-text: #f0dca6;
+  --hold-border: #5c4c2e;
+}
+
+/* ---------- Reduced motion ---------- */
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition-duration: .01ms !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+  .game-card:hover { transform: none; }
+}

@@ -1,0 +1,367 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Counters — Math Playground</title>
+<link rel="stylesheet" href="math.css">
+<script src="math.js"></script>
+</head>
+<body>
+
+<header class="site-head"></header>
+
+<main>
+  <h1>Counters</h1>
+  <p class="hero-tagline">A virtual ten-frame. Drag counters in and out of the frames,
+    then press Check. Nothing times out.</p>
+
+  <section class="setup" id="setupBar" aria-labelledby="setupTitle">
+    <p class="setup-title" id="setupTitle">What should we practice?</p>
+    <div class="setup-row">
+      <span class="setup-label" id="gradeLabel">Grade level</span>
+      <div class="setup-row" id="gradeRow" role="group" aria-labelledby="gradeLabel"></div>
+    </div>
+    <div class="setup-row">
+      <span class="setup-label" id="opLabel">Math operations</span>
+      <div class="setup-row" id="opRow" role="group" aria-labelledby="opLabel"></div>
+    </div>
+    <p class="setup-note" id="setupNote"></p>
+  </section>
+
+  <section class="game-stage" aria-label="Counters game">
+    <p class="prompt-line" id="prompt"></p>
+    <div class="visual" id="visual"></div>
+    <div class="problem" id="problem"></div>
+    <div class="choices" id="choices"></div>
+    <p class="feedback" id="feedback" aria-live="polite"></p>
+    <p class="hint-line" id="hint" hidden></p>
+    <div class="stage-actions" id="actions"></div>
+    <div class="progress" id="progress"></div>
+    <p class="progress-label" id="progressLabel"></p>
+  </section>
+</main>
+
+<footer class="site-foot"></footer>
+
+<script>
+  'use strict';
+
+  let game = null;
+  let board = null;      // this problem's counters
+  let curBox = null;     // the visual box we draw into
+  let drag = null;       // the counter being dragged right now
+  let lastDragEnd = 0;   // lets a tap after a drag be told apart
+
+  renderSetup({
+    only: GAME_OPS.counters,
+    note: gameNote('counters'),
+    onChange: () => { if (game) game.refresh(); }
+  });
+
+  function firstEmpty() {
+    for (let i = 0; i < board.cells; i++) if (!board.filled.has(i)) return i;
+    return -1;
+  }
+
+  /* Frames hold at least the starting amount and the answer. */
+  function newBoard(p) {
+    const frames = Math.max(1, Math.ceil(Math.max(p.a, p.answer) / 10));
+    const b = {
+      op: p.op,
+      answer: p.answer,
+      frames: frames,
+      cells: frames * 10,
+      filled: new Set(),
+      fromTray: new Set(),
+      tray: 0,
+      locked: false
+    };
+    for (let i = 0; i < p.a; i++) b.filled.add(i);
+    if (p.op === 'add') b.tray = p.b;   // sub starts with none taken away
+    return b;
+  }
+
+  /* ---------- Drag and drop ----------
+     Pointer drag with a floating counter. A plain tap still works
+     (tap the tray to send one in, tap a frame to take one out) so
+     touch screens and keyboards have a simple path too.          */
+
+  function under(x, y) {
+    const el = document.elementFromPoint(x, y);
+    if (!el || !el.closest) return null;
+    return { cell: el.closest('.cell'), tray: el.closest('.counter-tray') };
+  }
+
+  function startDrag(e, src) {
+    if (board.locked) return;
+    if (typeof e.button === 'number' && e.button !== 0) return;
+    if (e.pointerId === undefined) return;
+    lastDragEnd = 0;                       // a fresh press clears the guard
+    const host = e.currentTarget;
+    drag = {
+      src: src, host: host, pid: e.pointerId,
+      startX: e.clientX, startY: e.clientY,
+      moved: false, ghost: null, over: null
+    };
+    try { host.setPointerCapture(e.pointerId); } catch (err) { /* fine */ }
+    host.addEventListener('pointermove', moveDrag);
+    host.addEventListener('pointerup', endDrag);
+    host.addEventListener('pointercancel', cancelDrag);
+  }
+
+  function moveDrag(e) {
+    if (!drag) return;
+    if (!drag.moved) {
+      if (Math.hypot(e.clientX - drag.startX, e.clientY - drag.startY) < 5) return;
+      drag.moved = true;                  // now it's a drag, not a tap
+      document.body.classList.add('dragging-active');
+      const g = document.createElement('div');
+      g.className = 'drag-ghost';
+      g.innerHTML = '<span class="counter' +
+        (drag.src.group2 ? ' group2' : '') + '"></span>';
+      document.body.appendChild(g);
+      drag.ghost = g;
+      drag.src.el.classList.add('drag-src');
+    }
+    drag.ghost.style.left = e.clientX + 'px';
+    drag.ghost.style.top = e.clientY + 'px';
+    updateHover(e);
+  }
+
+  /* Highlight where this counter would land. */
+  function updateHover(e) {
+    const hit = under(e.clientX, e.clientY);
+    let ok = null;
+    if (hit && hit.cell) {
+      const idx = Number(hit.cell.dataset.index);
+      if (!board.filled.has(idx) && idx !== drag.src.idx) ok = hit.cell;
+    } else if (hit && hit.tray && drag.src.kind === 'cell') {
+      ok = hit.tray;
+    }
+    if (drag.over && drag.over !== ok) drag.over.classList.remove('drop-ok');
+    if (ok) ok.classList.add('drop-ok');
+    drag.over = ok;
+  }
+
+  /* Put the counter where it landed — or leave the board alone. */
+  function applyDrop(src, target) {
+    if (!target) return false;
+    if (target.kind === 'cell') {
+      if (board.filled.has(target.idx) || target.idx === src.idx) return false;
+      if (src.kind === 'tray') {
+        if (board.tray < 1) return false;
+        board.tray -= 1;
+        board.filled.add(target.idx);
+        board.fromTray.add(target.idx);
+      } else {
+        board.filled.delete(src.idx);
+        board.fromTray.delete(src.idx);
+        board.filled.add(target.idx);
+        if (src.group2) board.fromTray.add(target.idx);
+      }
+      return true;
+    }
+    if (src.kind === 'cell') {
+      board.filled.delete(src.idx);
+      board.fromTray.delete(src.idx);
+      board.tray += 1;
+      return true;
+    }
+    return false;
+  }
+
+  function cleanupDrag() {
+    if (!drag) return;
+    const d = drag;
+    drag = null;
+    d.host.removeEventListener('pointermove', moveDrag);
+    d.host.removeEventListener('pointerup', endDrag);
+    d.host.removeEventListener('pointercancel', cancelDrag);
+    if (d.ghost && d.ghost.parentNode) d.ghost.parentNode.removeChild(d.ghost);
+    if (d.over) d.over.classList.remove('drop-ok');
+    d.src.el.classList.remove('drag-src');
+    document.body.classList.remove('dragging-active');
+  }
+
+  function endDrag(e) {
+    const d = drag;
+    cleanupDrag();
+    if (!d || !d.moved) return;           // a tap: the click handler takes it
+    lastDragEnd = Date.now();
+    const hit = under(e.clientX, e.clientY);
+    let target = null;
+    if (hit && hit.cell && !board.filled.has(Number(hit.cell.dataset.index))) {
+      target = { kind: 'cell', idx: Number(hit.cell.dataset.index) };
+    } else if (hit && hit.tray && d.src.kind === 'cell') {
+      target = { kind: 'tray' };
+    }
+    applyDrop(d.src, target);
+    drawBoard();
+  }
+
+  function cancelDrag() {
+    const d = drag;
+    cleanupDrag();
+    if (d && d.moved) lastDragEnd = Date.now();
+  }
+
+  function afterDrag() { return Date.now() - lastDragEnd < 300; }
+
+  /* ---------- Drawing ---------- */
+
+  function counterMarkup(group2) {
+    return '<span class="counter' + (group2 ? ' group2' : '') + '"></span>';
+  }
+
+  function drawBoard() {
+    if (!curBox || !board) return;
+    const box = curBox;
+    box.textContent = '';
+
+    /* the ten-frames */
+    const wrap = document.createElement('div');
+    wrap.className = 'counter-boards';
+    for (let f = 0; f < board.frames; f++) {
+      const bd = document.createElement('div');
+      bd.className = 'board';
+      const lab = document.createElement('p');
+      lab.className = 'board-label';
+      lab.textContent = 'Frame ' + (f + 1);
+      const grid = document.createElement('div');
+      grid.className = 'ten-frame';
+      for (let c = 0; c < 10; c++) {
+        const idx = f * 10 + c;
+        const cell = document.createElement('div');
+        cell.className = 'cell';
+        cell.dataset.index = String(idx);
+        if (board.filled.has(idx)) {
+          const group2 = board.fromTray.has(idx);
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'counter-btn';
+          btn.disabled = board.locked;
+          btn.setAttribute('aria-label', board.op === 'add'
+            ? 'Drag this counter back to the tray, or tap to send it back'
+            : 'Drag this counter to the tray, or tap to take it out');
+          btn.innerHTML = counterMarkup(group2);
+          btn.addEventListener('pointerdown', (e) => startDrag(e, {
+            kind: 'cell', idx: idx, group2: group2, el: btn
+          }));
+          btn.addEventListener('click', () => {
+            if (board.locked || afterDrag()) return;
+            board.filled.delete(idx);
+            board.fromTray.delete(idx);
+            board.tray += 1;
+            drawBoard();
+          });
+          cell.appendChild(btn);
+        }
+        grid.appendChild(cell);
+      }
+      bd.append(lab, grid);
+      wrap.appendChild(bd);
+    }
+    box.appendChild(wrap);
+
+    /* the tray: counters waiting to go in, or taken away */
+    const tray = document.createElement('div');
+    tray.className = 'counter-tray';
+    const tl = document.createElement('p');
+    tl.className = 'tray-label';
+    tl.textContent = board.op === 'add'
+      ? (board.tray ? 'Drag a counter into a frame' : 'All counters are in the frames')
+      : (board.tray ? 'Drag a counter back, or tap it to put it back'
+                    : 'Nothing taken away yet \u2014 drag one out');
+    const row = document.createElement('div');
+    row.className = 'tray-row';
+    for (let i = 0; i < board.tray; i++) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'counter-btn';
+      btn.disabled = board.locked;
+      btn.setAttribute('aria-label', 'Drag this counter into a frame, or tap to drop it in');
+      btn.innerHTML = counterMarkup(true);
+      btn.addEventListener('pointerdown', (e) => startDrag(e, {
+        kind: 'tray', idx: -1, group2: true, el: btn
+      }));
+      btn.addEventListener('click', () => {
+        if (board.locked || afterDrag()) return;
+        const at = firstEmpty();
+        if (at < 0) return;
+        board.tray -= 1;
+        board.filled.add(at);
+        board.fromTray.add(at);
+        drawBoard();
+      });
+      row.appendChild(btn);
+    }
+    if (!board.tray) {
+      const none = document.createElement('span');
+      none.className = 'tray-empty';
+      none.textContent = '\u2014';
+      row.appendChild(none);
+    }
+    tray.append(tl, row);
+    box.appendChild(tray);
+
+    const count = document.createElement('p');
+    count.className = 'count-line';
+    count.textContent = 'In the frames: ' + board.filled.size;
+    box.appendChild(count);
+
+    if (!board.locked) {
+      const cr = document.createElement('div');
+      cr.className = 'check-row';
+      const check = document.createElement('button');
+      check.type = 'button';
+      check.className = 'btn primary';
+      check.textContent = 'Check';
+      check.addEventListener('click', () => {
+        if (board.locked) return;
+        if (board.filled.size === board.answer) game.correct();
+        else game.wrong();
+      });
+      cr.appendChild(check);
+      box.appendChild(cr);
+    }
+  }
+
+  game = initGame({
+    id: 'counters',
+    page: 'counters.html',
+    ops: GAME_OPS.counters,
+    prompt: (p) => p.op === 'add'
+      ? 'Drag the waiting counters into the frames, then press Check.'
+      : 'Drag counters out of the frames, then press Check.',
+    hintFor: (p) => p.op === 'add'
+      ? 'Drag ' + p.b + ' counters into the frames. Then count every counter in the frames.'
+      : 'Drag ' + p.b + ' counters out of the frames. Then count what is left.',
+    render: (p, box) => {
+      curBox = box;
+      board = newBoard(p);
+      drawBoard();
+    },
+    onCorrect: () => {
+      if (!board) return;
+      board.locked = true;
+      drawBoard();
+    },
+    onReveal: (p) => {
+      if (!board) return;
+      board.locked = true;
+      board.filled = new Set();
+      board.fromTray = new Set();
+      for (let i = 0; i < p.answer; i++) board.filled.add(i);
+      if (p.op === 'add') {
+        for (let i = p.a; i < p.answer; i++) board.fromTray.add(i);
+        board.tray = 0;
+      } else {
+        board.tray = p.b;         // show what was taken away
+      }
+      drawBoard();
+    }
+  });
+</script>
+</body>
+</html>

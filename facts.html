@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Facts — Math Playground</title>
+<link rel="stylesheet" href="math.css">
+<script src="math.js"></script>
+</head>
+<body>
+
+<header class="site-head"></header>
+
+<main>
+  <h1>Facts</h1>
+  <p class="hero-tagline">One fact at a time with three big choices. Use the Hint button
+    as often as you like — it never gives the answer away.</p>
+
+  <section class="setup" id="setupBar" aria-labelledby="setupTitle">
+    <p class="setup-title" id="setupTitle">What should we practice?</p>
+    <div class="setup-row">
+      <span class="setup-label" id="gradeLabel">Grade level</span>
+      <div class="setup-row" id="gradeRow" role="group" aria-labelledby="gradeLabel"></div>
+    </div>
+    <div class="setup-row">
+      <span class="setup-label" id="opLabel">Math operations</span>
+      <div class="setup-row" id="opRow" role="group" aria-labelledby="opLabel"></div>
+    </div>
+    <p class="setup-note" id="setupNote"></p>
+  </section>
+
+  <section class="game-stage" aria-label="Facts game">
+    <p class="prompt-line" id="prompt"></p>
+    <div class="visual" id="visual"></div>
+    <div class="problem" id="problem"></div>
+    <div class="choices" id="choices"></div>
+    <p class="feedback" id="feedback" aria-live="polite"></p>
+    <p class="hint-line" id="hint" hidden></p>
+    <div class="stage-actions" id="actions"></div>
+    <div class="progress" id="progress"></div>
+    <p class="progress-label" id="progressLabel"></p>
+  </section>
+</main>
+
+<footer class="site-foot"></footer>
+
+<script>
+  'use strict';
+
+  let game = null;
+
+  renderSetup({
+    only: GAME_OPS.facts,
+    note: gameNote('facts'),
+    onChange: () => { if (game) game.refresh(); }
+  });
+
+  game = initGame({
+    id: 'facts',
+    page: 'facts.html',
+    ops: GAME_OPS.facts,
+    choiceMode: true,
+    prompt: () => 'Choose the answer.',
+    hintFor: (p) => {
+      if (p.op === 'add') {
+        const hi = Math.max(p.a, p.b);
+        const lo = Math.min(p.a, p.b);
+        return 'Count on from the bigger number: start at ' + hi +
+          ', then add ' + lo + ' more.';
+      }
+      if (p.op === 'sub') {
+        return 'Start at ' + p.a + ' and count back ' + p.b + ' steps.';
+      }
+      if (p.op === 'mul') {
+        return 'Make ' + p.a + ' equal groups of ' + p.b +
+          '. Count them by ' + p.b + 's.';
+      }
+      return p.a + ' shared into groups of ' + p.b +
+        '. How many groups of ' + p.b + '?';
+    }
+  });
+</script>
+</body>
+</html>

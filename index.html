@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Math Playground — The Learning Toolshed</title>
+<link rel="stylesheet" href="math.css">
+<script src="math.js"></script>
+</head>
+<body class="home">
+
+<header class="site-head"></header>
+
+<main>
+
+  <section class="hero">
+    <div class="hero-art" aria-hidden="true">
+      <!-- A Toolshed shed with math on its sign — inline SVG so the
+           whole picture follows the color palette. -->
+      <svg viewBox="0 0 300 210" role="img">
+        <title>The Learning Toolshed math shed</title>
+        <!-- roof -->
+        <path d="M20 95 L150 25 L280 95 Z" fill="var(--accent)"/>
+        <path d="M20 95 L150 25 L280 95" fill="none" stroke="var(--text)" stroke-width="5" stroke-linejoin="round"/>
+        <!-- body -->
+        <rect x="48" y="95" width="204" height="98" rx="6"
+              fill="var(--surface)" stroke="var(--text)" stroke-width="5"/>
+        <!-- door -->
+        <rect x="122" y="126" width="56" height="67" rx="5"
+              fill="var(--surface-2)" stroke="var(--text)" stroke-width="4"/>
+        <circle cx="167" cy="162" r="4" fill="var(--text)"/>
+        <!-- sign with the four operations -->
+        <rect x="70" y="110" width="160" height="30" rx="8"
+              fill="var(--accent2)" stroke="var(--text)" stroke-width="4"/>
+        <g fill="var(--text)" font-family="Segoe UI, Arial, sans-serif"
+           font-weight="800" font-size="19" text-anchor="middle">
+          <text x="98" y="132">+</text>
+          <text x="133" y="132">&#8722;</text>
+          <text x="168" y="132">&#215;</text>
+          <text x="203" y="132">&#247;</text>
+        </g>
+        <!-- ten-frame sticker by the door -->
+        <g transform="translate(196,150)">
+          <rect x="0" y="0" width="44" height="26" rx="4"
+                fill="var(--surface)" stroke="var(--text)" stroke-width="3"/>
+          <line x1="22" y1="0" x2="22" y2="26" stroke="var(--text)" stroke-width="2"/>
+          <line x1="0" y1="13" x2="44" y2="13" stroke="var(--text)" stroke-width="2"/>
+          <circle cx="11" cy="6.5" r="4" fill="var(--accent)"/>
+          <circle cx="33" cy="6.5" r="4" fill="var(--accent2)"/>
+          <circle cx="11" cy="19.5" r="4" fill="var(--accent2)"/>
+        </g>
+      </svg>
+    </div>
+    <h1>Math Playground</h1>
+    <p class="hero-tagline">Calm math games for autistic learners — pick a grade, pick what
+      to practice, and play at your own pace. No timers, nothing to lose —
+      the score only counts your successes.</p>
+  </section>
+
+  <section class="setup" aria-labelledby="setupTitle">
+    <p class="setup-title" id="setupTitle">What should we practice?</p>
+    <div class="setup-row">
+      <span class="setup-label" id="gradeLabel">Grade level</span>
+      <div class="setup-row" id="gradeRow" role="group" aria-labelledby="gradeLabel"></div>
+    </div>
+    <div class="setup-row">
+      <span class="setup-label" id="opLabel">Math operations</span>
+      <div class="setup-row" id="opRow" role="group" aria-labelledby="opLabel"></div>
+    </div>
+    <p class="setup-note" id="setupNote"></p>
+  </section>
+
+  <h2>Pick a game</h2>
+
+  <a class="continue-strip" id="continueCard" href="#" hidden>
+    <span class="cs-emoji" aria-hidden="true">&#9654;</span>
+    <span class="cs-text"><strong id="continueName">Continue</strong>
+      — pick up where you left off.</span>
+    <span class="gc-go">Resume &rarr;</span>
+  </a>
+
+  <div class="game-grid">
+    <a class="game-card" href="counters.html">
+      <svg class="gc-icon" viewBox="0 0 48 48" aria-hidden="true">
+        <rect x="6" y="10" width="36" height="28" rx="5" fill="none" stroke="var(--accent)" stroke-width="3"/>
+        <line x1="24" y1="10" x2="24" y2="38" stroke="var(--accent)" stroke-width="2"/>
+        <line x1="6" y1="24" x2="42" y2="24" stroke="var(--accent)" stroke-width="2"/>
+        <circle cx="15" cy="17" r="4" fill="var(--accent)"/>
+        <circle cx="33" cy="17" r="4" fill="var(--accent2)"/>
+        <circle cx="15" cy="31" r="4" fill="var(--accent2)"/>
+        <circle cx="33" cy="31" r="4" fill="var(--accent)"/>
+      </svg>
+      <h3>Counters</h3>
+      <p>Push counters into ten-frames to add and take away. You can move every piece yourself.</p>
+      <span class="gc-go">Play &rarr;</span>
+    </a>
+
+    <a class="game-card" href="number-line.html">
+      <svg class="gc-icon" viewBox="0 0 48 48" aria-hidden="true">
+        <line x1="5" y1="34" x2="43" y2="34" stroke="var(--dim)" stroke-width="3" stroke-linecap="round"/>
+        <g stroke="var(--dim)" stroke-width="2">
+          <line x1="10" y1="30" x2="10" y2="38"/>
+          <line x1="24" y1="30" x2="24" y2="38"/>
+          <line x1="38" y1="30" x2="38" y2="38"/>
+        </g>
+        <path d="M10 26 Q17 8 24 26" fill="none" stroke="var(--accent2)"
+              stroke-width="3" stroke-dasharray="4 3" stroke-linecap="round"/>
+        <circle cx="10" cy="34" r="5" fill="var(--accent)"/>
+      </svg>
+      <h3>Number Line</h3>
+      <p>Watch a hopper jump along the line, then choose where it lands.</p>
+      <span class="gc-go">Play &rarr;</span>
+    </a>
+
+    <a class="game-card" href="facts.html">
+      <svg class="gc-icon" viewBox="0 0 48 48" aria-hidden="true">
+        <rect x="7" y="8" width="34" height="32" rx="6" fill="none" stroke="var(--accent)" stroke-width="3"/>
+        <text x="24" y="31" text-anchor="middle" font-size="16" font-weight="800"
+              fill="var(--text)" font-family="Segoe UI, Arial, sans-serif">7+5</text>
+      </svg>
+      <h3>Facts</h3>
+      <p>One fact at a time with three big choices. Hint button whenever you want it.</p>
+      <span class="gc-go">Play &rarr;</span>
+    </a>
+
+    <a class="game-card" href="story.html">
+      <svg class="gc-icon" viewBox="0 0 48 48" aria-hidden="true">
+        <rect x="6" y="9" width="36" height="30" rx="5" fill="none" stroke="var(--accent)" stroke-width="3"/>
+        <line x1="12" y1="17" x2="36" y2="17" stroke="var(--text)" stroke-width="2.5" stroke-linecap="round"/>
+        <line x1="12" y1="24" x2="30" y2="24" stroke="var(--dim)" stroke-width="2.5" stroke-linecap="round"/>
+        <line x1="12" y1="31" x2="25" y2="31" stroke="var(--dim)" stroke-width="2.5" stroke-linecap="round"/>
+      </svg>
+      <h3>Story Problems</h3>
+      <p>Short picture stories with a bar model to show what is happening.</p>
+      <span class="gc-go">Play &rarr;</span>
+    </a>
+  </div>
+
+  <p class="setup-note" style="margin-top:1.2rem">
+    Every game uses the same grade and operation choices above, and the same
+    color palettes as the rest of The Learning Toolshed.
+  </p>
+
+</main>
+
+<footer class="site-foot"></footer>
+
+<script>
+  /* Home never records itself as "last" — games do that. */
+  const GAME_NAMES = {
+    'counters.html': 'Counters',
+    'number-line.html': 'Number Line',
+    'facts.html': 'Facts',
+    'story.html': 'Story Problems'
+  };
+
+  renderSetup();
+
+  /* Jump back into the last game played, if there is one. */
+  const last = readPlay().last;
+  if (last && GAME_NAMES[last]) {
+    const card = document.getElementById('continueCard');
+    card.hidden = false;
+    card.href = last;
+    document.getElementById('continueName').textContent =
+      'Continue: ' + GAME_NAMES[last];
+  }
+</script>
+</body>
+</html>
