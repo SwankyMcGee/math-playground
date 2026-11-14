@@ -11,8 +11,8 @@ back to the Toolshed site, and only when someone clicks it.
 
 | File | Game | What the student does |
 | --- | --- | --- |
-| `counters.html` | **Counters** | A virtual ten-frame. Drag counters in and out of the frames (a plain tap works too), then press Check. |
-| `number-line.html` | **Number Line** | Drag the hopper or tap the big + / − buttons. The badge above shows how far it has moved from the start (−3, +7, 0). The choices unlock only when the hopper reaches the landing. |
+| `counters.html` | **Counters** | A virtual ten-frame. Drag counters in and out of the frames (a plain tap works too), then press Check. Numbers stay small — up to 20, so never more than two frames and far fewer drags. |
+| `number-line.html` | **Number Line** | Drag the hopper or tap the big + / − buttons. The badge above shows how far it has moved from the start (−3, +7, 0). Land on the answer and the hopper goes see-through with an outline while a magnifier shows the number up close. The choices unlock only when the hopper reaches the landing. |
 | `facts.html` | **7+5 Facts** | One fact at a time with three big choices and a Hint button. |
 | `story.html` | **Story Problems** | Short picture stories with scene icons and a proportional bar model. |
 
@@ -61,6 +61,11 @@ must be added to the dark-palette selectors in `math.css` (and in the site's
 **Play settings** live in `localStorage["workCycleTimer.math.v1"]` as
 `{ grade, ops, sound, last, score }` — a separate key on purpose, so the timer
 and the site never read fields they do not know.
+
+**Number ranges** come from `GAME_CEILING` in `math.js` and are clamped against
+the grade's own range (the setup note prints whichever is smaller). Counters is
+deliberately capped at **20** so the board never exceeds two ten-frames — that
+keeps the dragging to a minimum.
 
 ## Notes
 
