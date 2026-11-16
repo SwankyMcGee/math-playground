@@ -573,9 +573,9 @@ function injectHeader(activeId) {
     tools.appendChild(snd);
 
     tools.appendChild(makeHoldBtn('home', 'Home', 1000, () => { location.href = 'index.html'; }));
-    syncSoundBtn();
   }
   head.appendChild(tools);
+  syncSoundBtn();   // only once the button is in the document
 }
 
 function syncSoundBtn() {
