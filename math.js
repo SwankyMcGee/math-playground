@@ -19,6 +19,10 @@
 
 'use strict';
 
+/* Right-click menu off: holding a hold button is read as a long-press by
+   some touchscreens, which pops the context menu over the button. */
+document.addEventListener('contextmenu', (e) => e.preventDefault());
+
 const STORAGE_KEY = 'workCycleTimer.settings.v1';   // shared: theme + motifs
 const MATH_KEY = 'workCycleTimer.math.v1';          // ours: grade, ops, sound, last
 
