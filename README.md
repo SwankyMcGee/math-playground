@@ -81,6 +81,10 @@ frames are sized to hold `answer + spares`, so a wrong guess still fits
   hold-to-activate: 1 second, or 3 seconds for settings-style controls.
 - Background motifs are home-page only and have an **Off** toggle in the
   palette menu.
+- **One small same-origin script**: when served from the hub, `math.js` loads
+  `our-day/ourday-notify.js` so Our Day's gentle reminders can show a top-right
+  notice here too. Opened from disk (`file:`) no request is ever made — the tool
+  stays fully offline.
 
 ## Publishing
 
