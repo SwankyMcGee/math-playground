@@ -557,8 +557,20 @@ function injectHeader(activeId) {
   const brand = document.createElement('a');
   brand.className = 'brand';
   brand.href = 'index.html';
-  brand.innerHTML = 'Math Playground <span class="brand-sub">\u00B7 Toolshed</span>';
+  brand.innerHTML =
+    '<span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24">' +
+    '<rect x="2" y="2" width="20" height="20" rx="6" fill="var(--accent)"/>' +
+    '<path d="M12 7v10M7 12h10" stroke="var(--surface)" stroke-width="2.6" stroke-linecap="round"/>' +
+    '</svg></span>' +
+    'Math Playground <span class="brand-sub">\u00B7 Toolshed</span>';
   head.appendChild(brand);
+
+  /* Lift the sticky header with a shadow once the page scrolls. */
+  const syncHeadShadow = function () {
+    head.classList.toggle('scrolled', window.scrollY > 4);
+  };
+  window.addEventListener('scroll', syncHeadShadow, { passive: true });
+  syncHeadShadow();
 
   const nav = document.createElement('nav');
   nav.className = 'site-nav';

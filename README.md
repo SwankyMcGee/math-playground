@@ -14,7 +14,7 @@ back to the Toolshed site, and only when someone clicks it.
 | `counters.html` | **Counters** | A virtual ten-frame. Drag counters in and out of the frames (a plain tap works too), then press Check. Numbers stay small — up to 20 — and the tray always carries **3–5 spare counters** as well, so the student counts the ones they need instead of dragging the whole pile in. |
 | `number-line.html` | **Number Line** | Drag the hopper or tap the big + / − buttons. The badge above shows how far it has moved from the start (−3, +7, 0). Land on the answer and the hopper goes see-through with an outline while a magnifier shows the number up close. The choices unlock only when the hopper reaches the landing. |
 | `facts.html` | **7+5 Facts** | One fact at a time with three big choices and a Hint button. |
-| `story.html` | **Story Problems** | Short picture stories with scene icons and a proportional bar model. |
+| `story.html` | **Story Problems** | Short picture stories with scene icons and a proportional bar model. Each problem rolls a fresh cast — name, nouns, containers, wording — from a content bank, so the stories rarely repeat. |
 
 Every game has a **grade level** picker (K–12, in CCSS bands) and a **math
 operations** picker. Operations that do not apply to a game at the selected
@@ -41,6 +41,7 @@ grade are disabled with a plain-language label such as
   congrats screens, drag styles, and the background-motif off-toggle.
 - `index.html` — home page: hero, setup pickers, the four game cards, and a
   "Continue" strip for whichever game was played last.
+- `fonts/fredoka-latin.woff2` — the bundled display font (see Notes).
 
 ## Things to keep in sync
 
@@ -75,6 +76,9 @@ frames are sized to hold `answer + spares`, so a wrong guess still fits
 - All artwork is **inline SVG** so it recolors with the palette. There is no
   image file to load and no image generator in this project — if new art is
   wanted, draw it as SVG.
+- Headings, big problem numbers and choice buttons use **Fredoka**
+  (SIL Open Font License), bundled locally in `fonts/` so the pages stay
+  fully offline. Body copy keeps the system font stack.
 - Sound is Web Audio only (two notes on a correct answer, an arpeggio when the
   round ends) and **never starts on page load**. The 🔊 button turns it off.
 - The sensitive buttons (Skip, sound, Home, palette-free chrome controls) are

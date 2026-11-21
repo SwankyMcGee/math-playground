@@ -9,7 +9,21 @@
    in two-group visuals.
    ============================================================ */
 
+/* ---------- Bundled display font ----------
+   Fredoka (variable 300–700, SIL Open Font License) — a friendly
+   rounded face for headings, the big problem numbers and choice
+   buttons. The woff2 lives in fonts/ so every page stays fully
+   offline. Body copy keeps the system stack for legibility. */
+@font-face {
+  font-family: 'Fredoka';
+  font-style: normal;
+  font-weight: 300 700;
+  font-display: swap;
+  src: url('fonts/fredoka-latin.woff2') format('woff2');
+}
+
 :root {
+  --font-display: 'Fredoka', 'Segoe UI', system-ui, -apple-system, sans-serif;
   --bg: #f2f6f8;
   --surface: #ffffff;
   --surface-2: #e9eff3;
@@ -55,6 +69,9 @@ a { color: var(--accent); }
 /* ---------- Header / nav ---------- */
 
 .site-head {
+  position: sticky;
+  top: 0;
+  z-index: 40;
   background: var(--surface);
   border-bottom: 1px solid var(--border);
   padding: .7rem 1.2rem;
@@ -62,26 +79,40 @@ a { color: var(--accent); }
   flex-wrap: wrap;
   gap: .4rem 1rem;
   align-items: center;
+  transition: box-shadow .2s ease;
 }
+
+/* Lifted off the page once content scrolls beneath it. */
+.site-head.scrolled { box-shadow: 0 2px 14px rgba(0, 0, 0, .09); }
 
 .brand {
-  font-weight: 800;
+  font-weight: 700;
   text-decoration: none;
   color: var(--text);
+  display: inline-flex;
+  align-items: center;
+  gap: .55rem;
+  font-family: var(--font-display);
+  font-size: 1.06rem;
+  letter-spacing: -.01em;
 }
 
-.brand .brand-sub { font-weight: 500; color: var(--dim); }
+.brand .brand-sub { font-weight: 500; color: var(--dim); font-size: .88rem; letter-spacing: 0; }
+
+.brand-mark { display: inline-flex; }
+.brand-mark svg { display: block; width: 26px; height: 26px; }
 
 .site-nav {
   display: flex;
   flex-wrap: wrap;
-  gap: .25rem .9rem;
+  align-items: center;
+  gap: .25rem .35rem;
   font-size: .92rem;
 }
 
-.site-nav a { text-decoration: none; color: var(--dim); }
-.site-nav a:hover { color: var(--accent); }
-.site-nav a[aria-current="page"] { color: var(--text); font-weight: 700; }
+.site-nav a { text-decoration: none; color: var(--dim); border-radius: 999px; padding: .22rem .7rem; }
+.site-nav a:hover { color: var(--accent); background: var(--surface-2); }
+.site-nav a[aria-current="page"] { color: var(--text); font-weight: 700; background: var(--surface-2); }
 .site-nav a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 .head-tools {
@@ -106,9 +137,15 @@ main {
   padding: 1.2rem 1.2rem 2.5rem;
 }
 
-h1 { font-size: 1.7rem; margin: .6rem 0 .4rem; }
-h2 { font-size: 1.2rem; margin: 1.4rem 0 .5rem; }
+h1, h2, h3 { font-family: var(--font-display); font-weight: 600; letter-spacing: -.01em; }
+h1 { font-size: clamp(1.9rem, 4vw, 2.3rem); font-weight: 700; margin: .6rem 0 .4rem; }
+h2 { font-size: 1.3rem; margin: 1.4rem 0 .5rem; }
 p { margin: .45rem 0; }
+
+/* Section headings ("Pick a game") get a hairline rule that runs
+   to the edge of the column. */
+.section-h { display: flex; align-items: center; gap: .8rem; }
+.section-h::after { content: ''; flex: 1; height: 1px; background: var(--border); }
 
 /* ---------- Footer (shared Toolshed scene + rotating wisdom) ---------- */
 
@@ -318,17 +355,69 @@ p { margin: .45rem 0; }
 /* ---------- Home: hero + game chooser ---------- */
 
 .hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   text-align: center;
-  padding: .8rem 0 .4rem;
+  padding: 1.1rem 0 .5rem;
 }
 
-.hero-art { display: inline-block; }
-.hero-art svg { width: min(300px, 70vw); height: auto; }
+.hero-art {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: min(330px, 74vw);
+  aspect-ratio: 1;
+  z-index: 1;
+}
+
+/* Soft tinted disc behind the shed so the art reads as a badge. */
+.hero-art::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+}
+
+.hero-art svg { position: relative; width: 92%; height: auto; }
+
+.hero-kicker {
+  display: inline-block;
+  font-size: .76rem;
+  font-weight: 700;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--border));
+  border-radius: 999px;
+  padding: .22rem .85rem;
+  margin: 0 0 .55rem;
+}
+
+.hero h1 { margin: .1rem 0 .35rem; }
 
 .hero-tagline {
   color: var(--dim);
-  font-size: 1.02rem;
-  margin: .3rem 0 0;
+  font-size: 1.03rem;
+  margin: .3rem auto 0;
+  max-width: 42em;
+}
+
+@media (min-width: 880px) {
+  .hero {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-areas: 'art copy';
+    align-items: center;
+    gap: 2.2rem;
+    text-align: left;
+    padding: 1.4rem 0 .8rem;
+  }
+  .hero-art { grid-area: art; width: min(330px, 24vw); }
+  .hero-copy { grid-area: copy; }
+  .hero-tagline { margin-left: 0; }
 }
 
 .game-grid {
@@ -341,22 +430,48 @@ p { margin: .45rem 0; }
 .game-card {
   display: flex;
   flex-direction: column;
-  gap: .5rem;
+  gap: .55rem;
   text-decoration: none;
   color: var(--text);
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 14px;
-  padding: 1rem 1.1rem;
-  transition: border-color .15s ease, transform .15s ease;
+  border-radius: 16px;
+  padding: 1.1rem 1.15rem;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .04), 0 5px 16px rgba(0, 0, 0, .05);
+  transition: border-color .15s ease, transform .15s ease, box-shadow .15s ease;
 }
 
-.game-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+.game-card:hover {
+  border-color: var(--accent);
+  transform: translateY(-3px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, .05), 0 12px 26px rgba(0, 0, 0, .09);
+}
 .game-card:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-.game-card .gc-icon { width: 44px; height: 44px; }
-.game-card h3 { margin: 0; font-size: 1.05rem; }
+
+/* Icon sits in a tinted rounded tile. */
+.game-card .gc-icon {
+  width: 56px;
+  height: 56px;
+  padding: 10px;
+  box-sizing: border-box;
+  background: color-mix(in srgb, var(--accent) 12%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--border));
+  border-radius: 14px;
+}
+
+.game-card h3 { margin: 0; font-size: 1.12rem; }
 .game-card p { margin: 0; color: var(--dim); font-size: .92rem; flex: 1; }
-.game-card .gc-go { color: var(--accent); font-weight: 700; font-size: .93rem; }
+
+.game-card .gc-go {
+  align-self: flex-start;
+  color: var(--accent);
+  background: var(--surface-2);
+  border-radius: 999px;
+  padding: .26rem .9rem;
+  font-weight: 700;
+  font-size: .88rem;
+}
+.game-card:hover .gc-go { background: color-mix(in srgb, var(--accent) 12%, var(--surface-2)); }
 
 /* ---------- Home: continue strip (last game played) ---------- */
 
@@ -365,15 +480,17 @@ p { margin: .45rem 0; }
   align-items: center;
   gap: .7rem;
   margin-top: 1rem;
-  padding: .8rem 1rem;
+  padding: .85rem 1.1rem;
   text-decoration: none;
   color: var(--text);
   background: var(--surface);
   border: 1.5px solid var(--accent);
-  border-radius: 14px;
+  border-radius: 16px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .04), 0 5px 16px rgba(0, 0, 0, .05);
+  transition: background-color .15s ease, box-shadow .15s ease;
 }
 
-.continue-strip:hover { background: var(--surface-2); }
+.continue-strip:hover { background: var(--surface-2); box-shadow: 0 2px 4px rgba(0, 0, 0, .05), 0 10px 22px rgba(0, 0, 0, .08); }
 .continue-strip:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .continue-strip .cs-emoji { color: var(--accent); font-size: 1.1rem; }
 .continue-strip .cs-text { flex: 1; font-size: .97rem; }
@@ -389,8 +506,9 @@ p { margin: .45rem 0; }
 }
 
 .setup-title {
-  font-weight: 700;
-  font-size: .95rem;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.02rem;
   margin: 0 0 .5rem;
 }
 
@@ -412,7 +530,8 @@ p { margin: .45rem 0; }
 
 .chip {
   font: inherit;
-  font-size: .93rem;
+  font-family: var(--font-display);
+  font-size: .95rem;
   font-weight: 600;
   color: var(--text);
   background: var(--surface-2);
@@ -421,6 +540,7 @@ p { margin: .45rem 0; }
   padding: .38rem .9rem;
   min-height: 42px;
   cursor: pointer;
+  transition: border-color .15s ease, background-color .15s ease;
 }
 
 .chip:hover { border-color: var(--accent); }
@@ -457,16 +577,18 @@ html[data-theme="warm"] .chip[aria-pressed="true"] {
 .game-stage {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 16px;
+  border-radius: 18px;
   padding: clamp(1rem, 3vw, 1.8rem);
   margin-top: 1rem;
   text-align: center;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, .04), 0 8px 26px rgba(0, 0, 0, .05);
 }
 
 .problem {
-  font-size: clamp(2rem, 7vw, 3.2rem);
-  font-weight: 800;
-  letter-spacing: .02em;
+  font-family: var(--font-display);
+  font-size: clamp(2.1rem, 7vw, 3.4rem);
+  font-weight: 600;
+  letter-spacing: .01em;
   margin: .2rem 0 .6rem;
   font-variant-numeric: tabular-nums;
 }
@@ -491,31 +613,44 @@ html[data-theme="warm"] .chip[aria-pressed="true"] {
 
 .choice {
   font: inherit;
-  font-size: clamp(1.3rem, 4vw, 1.8rem);
-  font-weight: 800;
+  font-family: var(--font-display);
+  font-size: clamp(1.35rem, 4vw, 1.9rem);
+  font-weight: 600;
   color: var(--text);
   background: var(--surface-2);
   border: 2px solid var(--border);
-  border-radius: 14px;
+  border-radius: 16px;
   padding: .55rem 1.3rem;
-  min-width: 5.2rem;
-  min-height: 60px;
+  min-width: 5.4rem;
+  min-height: 62px;
   cursor: pointer;
   font-variant-numeric: tabular-nums;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .05);
+  transition: border-color .15s ease, transform .12s ease, box-shadow .15s ease;
 }
 
-.choice:hover { border-color: var(--accent); }
+.choice:hover {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, .08);
+}
+.choice:active { transform: translateY(0); }
 .choice:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
 
 .choice.correct {
   border-color: var(--accent2);
   background: var(--surface-2);
   color: var(--accent2);
+  animation: choicePop .3s ease;
+}
+
+@keyframes choicePop {
+  50% { transform: scale(1.06); }
 }
 
 .choice.soft { opacity: .5; }        /* not the answer — stays visible, no red */
 
-/* Feedback line: gentle, never a buzzer. */
+/* Feedback line: gentle, never a buzzer. Success gets a check. */
 .feedback {
   min-height: 1.6em;
   font-size: 1.02rem;
@@ -523,6 +658,8 @@ html[data-theme="warm"] .chip[aria-pressed="true"] {
   color: var(--accent2);
   margin: .3rem 0 0;
 }
+
+.feedback:not(.neutral):not(:empty)::before { content: '\2713\00a0'; }
 
 .feedback.neutral { color: var(--dim); font-weight: 500; }
 
@@ -537,8 +674,9 @@ html[data-theme="warm"] .chip[aria-pressed="true"] {
 /* Plain tap buttons (not hold) for in-game flow. */
 .btn {
   font: inherit;
-  font-size: .97rem;
-  font-weight: 700;
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 600;
   color: var(--text);
   background: var(--surface-2);
   border: 1.5px solid var(--border);
@@ -546,6 +684,8 @@ html[data-theme="warm"] .chip[aria-pressed="true"] {
   padding: .55rem 1.3rem;
   min-height: 46px;
   cursor: pointer;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .04);
+  transition: border-color .15s ease, background-color .15s ease;
 }
 
 .btn:hover { border-color: var(--accent); }
@@ -721,15 +861,19 @@ html[data-theme="warm"] .bar.whole {
 }
 
 .pdot {
-  width: 13px;
-  height: 13px;
+  width: 14px;
+  height: 14px;
   border-radius: 50%;
   background: var(--surface-2);
   border: 1.5px solid var(--border);
 }
 
 .pdot.done { background: var(--accent2); border-color: var(--accent2); }
-.pdot.now { border-color: var(--accent); background: var(--surface); }
+.pdot.now {
+  border-color: var(--accent);
+  background: var(--surface);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent);
+}
 
 .progress-label {
   font-size: .83rem;
@@ -871,7 +1015,7 @@ html[data-theme="high"] body.home::before { display: none; }
 
 .round-done { padding: .4rem 0 .2rem; }
 .rd-emoji { font-size: 2.6rem; line-height: 1.1; }
-.rd-title { font-size: 1.5rem; margin: .35rem 0 .3rem; }
+.rd-title { font-size: 1.7rem; margin: .35rem 0 .3rem; font-weight: 700; }
 .rd-line { font-size: 1.05rem; margin: .15rem 0; }
 .rd-line strong { color: var(--accent2); }
 .rd-total { color: var(--dim); font-size: .95rem; margin: .15rem 0 .45rem; }

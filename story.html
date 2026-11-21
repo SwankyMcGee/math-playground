@@ -55,10 +55,92 @@
     onChange: () => { if (game) game.refresh(); }
   });
 
-  const NAMES = ['Maya', 'Sam', 'Leo', 'Ana', 'Ben'];
+  /* ---------- Story content bank ----------
+     Each problem picks a fresh name, noun, container, verb and
+     (sometimes) setting, then fills one of several sentence
+     templates for its operation. Recent-pick buffers stop the
+     same choice coming up twice in a row. The math itself is
+     untouched: the bar model, hints and choices only read
+     p.a, p.b and p.op. */
 
-  /* Small flat icons, drawn in the palette's own colors. */
-  const ICONS = {
+  const NAMES = ['Maya', 'Sam', 'Leo', 'Ana', 'Ben', 'Zara', 'Omar', 'Ivy',
+    'Noah', 'Priya', 'Felix', 'Rosa', 'Kai', 'Luna', 'Miles', 'Tara',
+    'Jude', 'Wren'];
+
+  /* one = singular, many = plural, food = eats with "ate" verbs. */
+  const NOUNS = [
+    { one: 'apple',        many: 'apples',        icon: 'apple',     food: true },
+    { one: 'cookie',       many: 'cookies',       icon: 'cookie',    food: true },
+    { one: 'cupcake',      many: 'cupcakes',      icon: 'cupcake',   food: true },
+    { one: 'candy',        many: 'candies',       icon: 'candy',     food: true },
+    { one: 'sticker',      many: 'stickers',      icon: 'sticker' },
+    { one: 'crayon',       many: 'crayons',       icon: 'crayon' },
+    { one: 'balloon',      many: 'balloons',      icon: 'balloon' },
+    { one: 'marble',       many: 'marbles',       icon: 'marble' },
+    { one: 'book',         many: 'books',         icon: 'book' },
+    { one: 'pencil',       many: 'pencils',       icon: 'pencil' },
+    { one: 'flower',       many: 'flowers',       icon: 'flower' },
+    { one: 'seashell',     many: 'seashells',     icon: 'shell' },
+    { one: 'trading card', many: 'trading cards', icon: 'card' },
+    { one: 'block',        many: 'blocks',        icon: 'block' },
+    { one: 'toy car',      many: 'toy cars',      icon: 'car' },
+    { one: 'eraser',       many: 'erasers',       icon: 'eraser' },
+    { one: 'gem',          many: 'gems',          icon: 'gem' },
+    { one: 'button',       many: 'buttons',       icon: 'button' },
+    { one: 'leaf',         many: 'leaves',        icon: 'leaf' },
+    { one: 'pinecone',     many: 'pinecones',     icon: 'pinecone' },
+    { one: 'acorn',        many: 'acorns',        icon: 'acorn' },
+    { one: 'bead',         many: 'beads',         icon: 'bead' },
+    { one: 'rock',         many: 'rocks',         icon: 'rock' },
+    { one: 'star',         many: 'stars',         icon: 'star' }
+  ];
+
+  /* Containers hold nouns for multiplication and division.
+     prep = how things sit "in the jar" / "on the plate". */
+  const CONTAINERS = [
+    { one: 'box',    many: 'boxes',    icon: 'box',    prep: 'in' },
+    { one: 'bag',    many: 'bags',     icon: 'bag',    prep: 'in' },
+    { one: 'jar',    many: 'jars',     icon: 'jar',    prep: 'in' },
+    { one: 'plate',  many: 'plates',   icon: 'plate',  prep: 'on' },
+    { one: 'basket', many: 'baskets',  icon: 'basket', prep: 'in' },
+    { one: 'crate',  many: 'crates',   icon: 'crate',  prep: 'in' }
+  ];
+
+  /* Optional scene-setting tails; two blanks keep it rare. */
+  const SETTINGS = ['', '', 'on the table', 'in the classroom',
+    'at the picnic', 'by the back door', 'on the shelf', 'in the lunch bag'];
+
+  const VERBS = {
+    add: ['found', 'picked up', 'bought', 'won', 'collected'],
+    sub: ['took', 'used', 'gave away', 'set aside', 'moved'],
+    subFood: ['ate', 'shared', 'passed around']
+  };
+
+  /* Anti-repetition: value -> recent picks (bounded ring). */
+  const recent = {
+    name: [], noun: [], container: [], verb: [], setting: [],
+    tpl: { add: [], sub: [], mul: [], div: [] }
+  };
+
+  function pickFrom(arr, seen, keep) {
+    let v = arr[0];
+    for (let i = 0; i < 12; i++) {
+      v = arr[randInt(0, arr.length - 1)];
+      if (seen.indexOf(v) === -1) break;
+    }
+    seen.push(v);
+    while (seen.length > keep) seen.shift();
+    return v;
+  }
+
+  /* "1 apple" vs "7 apples". */
+  function many(noun, n) { return n === 1 ? noun.one : noun.many; }
+
+  /* Small flat icons, drawn in the palette's own colors.
+      (Named STORY_ICONS: math.js already owns a global ICONS —
+      the header control set — and a duplicate declaration would
+      void this whole script.) */
+  const STORY_ICONS = {
     apple: '<circle cx="16" cy="19" r="10.5" fill="var(--accent)"/>' +
       '<rect x="14.7" y="5" width="2.6" height="7" rx="1.3" fill="var(--text)"/>' +
       '<path d="M17.5 8.5c1.6-3 4.6-4 7.2-3.4.4 3-1.7 6-5.2 6.6z" fill="var(--accent2)"/>',
@@ -67,50 +149,189 @@
       '<circle cx="19.5" cy="12.5" r="1.7" fill="var(--surface)"/>' +
       '<circle cx="17" cy="19.5" r="2.2" fill="var(--surface)"/>' +
       '<circle cx="11" cy="20" r="1.6" fill="var(--surface)"/>',
+    cupcake: '<path d="M9 16h14l-2 10H11z" fill="var(--accent)"/>' +
+      '<path d="M8.5 16a7.5 7.5 0 0 1 15 0z" fill="var(--accent2)"/>' +
+      '<circle cx="16" cy="7" r="2.2" fill="var(--text)"/>',
+    candy: '<rect x="9" y="12" width="14" height="8" rx="4" fill="var(--accent)"/>' +
+      '<path d="M9 12 3 8v16l6-4z" fill="var(--accent2)"/>' +
+      '<path d="M23 12l6-4v16l-6-4z" fill="var(--accent2)"/>' +
+      '<line x1="16" y1="12" x2="16" y2="20" stroke="var(--surface)" stroke-width="2"/>',
+    sticker: '<rect x="5" y="5" width="22" height="22" rx="6" fill="var(--accent2)"/>' +
+      '<path d="M10 16.5l4 4 8-9" stroke="var(--surface)" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>',
+    crayon: '<rect x="11" y="10" width="10" height="17" rx="1.5" fill="var(--accent)"/>' +
+      '<path d="M11 10 16 3l5 7z" fill="var(--accent2)"/>' +
+      '<rect x="11" y="14" width="10" height="3" fill="var(--surface)"/>',
+    balloon: '<ellipse cx="16" cy="12" rx="8" ry="9.5" fill="var(--accent)"/>' +
+      '<path d="M16 21.5 14.5 24h3z" fill="var(--accent)"/>' +
+      '<path d="M16 24c-3 3 3 5 0 8" fill="none" stroke="var(--text)" stroke-width="1.6" stroke-linecap="round"/>',
+    marble: '<circle cx="16" cy="16" r="10.5" fill="var(--accent)"/>' +
+      '<path d="M9 12a8 8 0 0 1 10-4" fill="none" stroke="var(--surface)" stroke-width="3" stroke-linecap="round"/>' +
+      '<circle cx="20" cy="19" r="4" fill="var(--accent2)"/>',
+    book: '<rect x="6" y="6" width="20" height="21" rx="2.5" fill="var(--accent)"/>' +
+      '<rect x="6" y="6" width="4.5" height="21" rx="2.5" fill="var(--text)"/>' +
+      '<line x1="14" y1="12" x2="23" y2="12" stroke="var(--surface)" stroke-width="2" stroke-linecap="round"/>' +
+      '<line x1="14" y1="17" x2="23" y2="17" stroke="var(--surface)" stroke-width="2" stroke-linecap="round"/>',
+    pencil: '<rect x="12" y="8" width="8" height="15" fill="var(--accent)"/>' +
+      '<rect x="12" y="8" width="8" height="3.5" fill="var(--accent2)"/>' +
+      '<path d="M12 23h8l-4 6z" fill="var(--text)"/>',
+    flower: '<path d="M16 19v9" stroke="var(--accent2)" stroke-width="2.5" stroke-linecap="round"/>' +
+      '<path d="M16 24c4-1 6-4 5-7-3 0-6 3-5 7z" fill="var(--accent2)"/>' +
+      '<circle cx="16" cy="5" r="4.4" fill="var(--accent2)"/>' +
+      '<circle cx="22" cy="11" r="4.4" fill="var(--accent2)"/>' +
+      '<circle cx="16" cy="17" r="4.4" fill="var(--accent2)"/>' +
+      '<circle cx="10" cy="11" r="4.4" fill="var(--accent2)"/>' +
+      '<circle cx="16" cy="11" r="4" fill="var(--accent)"/>',
+    shell: '<path d="M16 27C6 26 3 18 5 11c6-3 16-3 22 0 2 7-1 15-11 16z" fill="var(--accent2)"/>' +
+      '<path d="M16 27c-3-7-4-13-4-18M16 27V9M16 27c3-7 4-13 4-18" stroke="var(--surface)" stroke-width="1.7" fill="none"/>',
+    card: '<rect x="7" y="4" width="18" height="24" rx="3" fill="var(--surface)" stroke="var(--accent)" stroke-width="2.5"/>' +
+      '<path d="M16 9l1.8 3.6 4 .6-2.9 2.8.7 4-3.6-1.9-3.6 1.9.7-4-2.9-2.8 4-.6z" fill="var(--accent2)"/>' +
+      '<line x1="10.5" y1="24" x2="21.5" y2="24" stroke="var(--dim)" stroke-width="2" stroke-linecap="round"/>',
+    block: '<rect x="5" y="13" width="22" height="13" rx="2" fill="var(--accent)"/>' +
+      '<rect x="8" y="8" width="6" height="5" rx="1.5" fill="var(--accent)"/>' +
+      '<rect x="18" y="8" width="6" height="5" rx="1.5" fill="var(--accent)"/>',
+    car: '<rect x="4" y="15" width="24" height="8" rx="3" fill="var(--accent)"/>' +
+      '<path d="M9 15l3-5h7l3 5z" fill="var(--accent2)"/>' +
+      '<circle cx="10.5" cy="23" r="3.5" fill="var(--text)"/>' +
+      '<circle cx="21.5" cy="23" r="3.5" fill="var(--text)"/>' +
+      '<circle cx="10.5" cy="23" r="1.3" fill="var(--surface)"/>' +
+      '<circle cx="21.5" cy="23" r="1.3" fill="var(--surface)"/>',
+    eraser: '<rect x="5" y="13" width="22" height="9" rx="3" fill="var(--surface-2)" stroke="var(--text)" stroke-width="1.8"/>' +
+      '<path d="M5 16.5a3 3 0 0 1 3-3h7v9H8a3 3 0 0 1-3-3z" fill="var(--accent2)"/>',
+    gem: '<path d="M9 6h14l5 7-12 13L4 13z" fill="var(--accent)"/>' +
+      '<path d="M9 6l7 20 7-20M4 13h24" stroke="var(--surface)" stroke-width="1.6" fill="none"/>',
+    button: '<circle cx="16" cy="16" r="11" fill="var(--accent)"/>' +
+      '<circle cx="13" cy="13" r="1.8" fill="var(--surface)"/>' +
+      '<circle cx="19" cy="13" r="1.8" fill="var(--surface)"/>' +
+      '<circle cx="13" cy="19" r="1.8" fill="var(--surface)"/>' +
+      '<circle cx="19" cy="19" r="1.8" fill="var(--surface)"/>',
+    leaf: '<path d="M7 25C7 14 14 7 26 6c-1 12-8 19-19 19z" fill="var(--accent2)"/>' +
+      '<path d="M8 24c5-5 10-10 16-15" stroke="var(--surface)" stroke-width="1.8" fill="none" stroke-linecap="round"/>',
+    pinecone: '<ellipse cx="16" cy="17" rx="8" ry="11" fill="var(--accent)"/>' +
+      '<path d="M9 13h14M8.5 18h15M10 23h12" stroke="var(--surface)" stroke-width="2" stroke-linecap="round"/>' +
+      '<rect x="14.5" y="3" width="3" height="5" rx="1.5" fill="var(--text)"/>',
+    acorn: '<path d="M9 14h14c0 7-3 12-7 12s-7-5-7-12z" fill="var(--accent)"/>' +
+      '<path d="M7.5 14a8.5 8.5 0 0 1 17 0z" fill="var(--text)"/>' +
+      '<rect x="15" y="3.5" width="2.5" height="4" rx="1.2" fill="var(--text)"/>',
+    bead: '<circle cx="16" cy="16" r="10.5" fill="var(--accent)"/>' +
+      '<circle cx="16" cy="16" r="6" fill="none" stroke="var(--accent2)" stroke-width="2"/>' +
+      '<circle cx="16" cy="16" r="3" fill="var(--surface)"/>',
+    rock: '<path d="M6 22 9 11l8-4 8 5 1 9-6 5H10z" fill="var(--surface-2)" stroke="var(--text)" stroke-width="2" stroke-linejoin="round"/>' +
+      '<path d="M9 11l7 6 9-5M16 17l4 9" stroke="var(--text)" stroke-width="1.5" fill="none"/>',
+    star: '<path d="M16 4l3.8 7.7 8.5 1.2-6.1 6 1.4 8.4-7.6-4-7.6 4 1.4-8.4-6.1-6 8.5-1.2z" fill="var(--accent)"/>',
     box: '<rect x="4" y="11" width="24" height="16" rx="2.5" fill="var(--accent)"/>' +
       '<path d="M4 17.5h24" stroke="var(--surface)" stroke-width="2.5"/>' +
       '<path d="M16 11v6.5" stroke="var(--surface)" stroke-width="2.5"/>' +
       '<path d="M9.5 11 12.5 6h7l3 5" fill="none" stroke="var(--text)" stroke-width="2.2" stroke-linejoin="round"/>',
     bag: '<path d="M8 12h16l-2 15H10z" fill="var(--accent2)"/>' +
-      '<path d="M12 12V9a4 4 0 0 1 8 0v3" fill="none" stroke="var(--text)" stroke-width="2.4"/>'
+      '<path d="M12 12V9a4 4 0 0 1 8 0v3" fill="none" stroke="var(--text)" stroke-width="2.4"/>',
+    jar: '<rect x="8" y="10" width="16" height="18" rx="3" fill="var(--accent)"/>' +
+      '<rect x="6.5" y="5.5" width="19" height="5.5" rx="2" fill="var(--text)"/>' +
+      '<rect x="11" y="14" width="3" height="8" rx="1.5" fill="var(--surface)"/>',
+    plate: '<ellipse cx="16" cy="16" rx="13" ry="10" fill="var(--surface-2)" stroke="var(--accent)" stroke-width="2"/>' +
+      '<ellipse cx="16" cy="16" rx="7" ry="5" fill="none" stroke="var(--accent)" stroke-width="1.6"/>',
+    basket: '<path d="M6 12h20l-2.5 13h-15z" fill="var(--accent)"/>' +
+      '<path d="M8.5 17h15M9.5 22h13" stroke="var(--surface)" stroke-width="1.8"/>' +
+      '<path d="M11 12a5 5 0 0 1 10 0" fill="none" stroke="var(--text)" stroke-width="2.2"/>',
+    crate: '<rect x="5" y="9" width="22" height="17" rx="2" fill="var(--accent)"/>' +
+      '<path d="M5 9l22 17M27 9 5 26" stroke="var(--surface)" stroke-width="2.2"/>' +
+      '<line x1="5" y1="17.5" x2="27" y2="17.5" stroke="var(--surface)" stroke-width="2"/>'
   };
 
   function icon(kind) {
-    return '<svg viewBox="0 0 32 32" aria-hidden="true">' + ICONS[kind] + '</svg>';
+    return '<svg viewBox="0 0 32 32" aria-hidden="true">' + STORY_ICONS[kind] + '</svg>';
   }
 
-  function sentence(p, name) {
-    if (p.op === 'add') {
-      return name + ' had ' + p.a + ' apples and picked ' + p.b +
-        ' more. How many apples does ' + name + ' have now?';
+  /* Fresh cast and props for one problem. */
+  function makeParts(p) {
+    const noun = pickFrom(NOUNS, recent.noun, 4);
+    let verb = '';
+    if (p.op === 'add') verb = pickFrom(VERBS.add, recent.verb, 1);
+    else if (p.op === 'sub') {
+      verb = pickFrom(noun.food ? VERBS.subFood : VERBS.sub, recent.verb, 1);
     }
-    if (p.op === 'sub') {
-      return 'There were ' + p.a + ' cookies on the plate. ' + name +
-        ' ate ' + p.b + '. How many cookies are left?';
-    }
-    if (p.op === 'mul') {
-      return 'There are ' + p.a + ' boxes. Each box holds ' + p.b +
-        ' stickers. How many stickers are there altogether?';
-    }
-    return p.a + ' stickers are shared equally into ' + p.b +
-      ' bags. How many stickers are in each bag?';
+    return {
+      name: pickFrom(NAMES, recent.name, 2),
+      noun: noun,
+      container: pickFrom(CONTAINERS, recent.container, 2),
+      verb: verb,
+      setting: pickFrom(SETTINGS, recent.setting, 1)
+    };
   }
 
-  function sceneParts(p) {
+  /* Sentence templates per operation — {x} is the picked cast. */
+  const TPL = {
+    add: [
+      (p, x) => x.name + ' had ' + p.a + ' ' + many(x.noun, p.a) + ' and ' +
+        x.verb + ' ' + p.b + ' more. How many ' + x.noun.many + ' does ' +
+        x.name + ' have now?',
+      (p, x) => 'There ' + (p.a === 1 ? 'was' : 'were') + ' ' + p.a + ' ' +
+        many(x.noun, p.a) + (x.setting ? ' ' + x.setting : '') + '. ' +
+        x.name + ' added ' + p.b + ' more. How many ' + x.noun.many +
+        ' are there now?',
+      (p, x) => x.name + ' was handing out ' + p.a + ' ' + many(x.noun, p.a) +
+        '. A friend gave ' + x.name + ' ' + p.b + ' more. How many ' +
+        x.noun.many + ' altogether?',
+      (p, x) => x.name + ' had ' + p.a + ' ' + many(x.noun, p.a) + '. Then ' +
+        x.name + ' ' + x.verb + ' ' + p.b + ' more. How many ' + x.noun.many +
+        ' does ' + x.name + ' have now?'
+    ],
+    sub: [
+      (p, x) => 'There ' + (p.a === 1 ? 'was' : 'were') + ' ' + p.a + ' ' +
+        many(x.noun, p.a) + (x.setting ? ' ' + x.setting : '') + '. ' +
+        x.name + ' ' + x.verb + ' ' + p.b + '. How many ' + x.noun.many +
+        ' are left?',
+      (p, x) => x.name + ' had ' + p.a + ' ' + many(x.noun, p.a) + ' and ' +
+        x.verb + ' ' + p.b + ' of them. How many ' + x.noun.many + ' are left?',
+      (p, x) => p.a + ' ' + many(x.noun, p.a) + ' were ' + x.container.prep +
+        ' the ' + x.container.one + '. ' + x.name + ' took ' + p.b +
+        '. How many ' + x.noun.many + ' are left?'
+    ],
+    mul: [
+      (p, x) => 'There are ' + p.a + ' ' + x.container.many + '. Each ' +
+        x.container.one + ' holds ' + p.b + ' ' + many(x.noun, p.b) +
+        '. How many ' + x.noun.many + ' are there altogether?',
+      (p, x) => x.name + ' packed ' + p.b + ' ' + many(x.noun, p.b) +
+        ' into each of ' + p.a + ' ' + x.container.many + '. How many ' +
+        x.noun.many + ' altogether?',
+      (p, x) => p.a + ' ' + x.container.many + ' each have ' + p.b + ' ' +
+        many(x.noun, p.b) + '. How many ' + x.noun.many + ' does ' +
+        x.name + ' have in all?'
+    ],
+    div: [
+      (p, x) => p.a + ' ' + many(x.noun, p.a) + ' are shared equally into ' +
+        p.b + ' ' + x.container.many + '. How many ' + x.noun.many +
+        ' are in each ' + x.container.one + '?',
+      (p, x) => x.name + ' put ' + p.a + ' ' + many(x.noun, p.a) + ' into ' +
+        p.b + ' ' + x.container.many + ', the same number in each. How many ' +
+        x.noun.many + ' in each ' + x.container.one + '?',
+      (p, x) => p.a + ' ' + many(x.noun, p.a) + ' go into ' + p.b + ' ' +
+        x.container.many + ' evenly. How many ' + x.noun.many +
+        ' does each ' + x.container.one + ' get?'
+    ]
+  };
+
+  function sentence(p, x) {
+    const list = TPL[p.op] || TPL.add;
+    return pickFrom(list, recent.tpl[p.op], 1)(p, x);
+  }
+
+  function sceneParts(p, x) {
     if (p.op === 'add') {
-      return [{ icon: 'apple', text: String(p.a) }, { op: '+' },
-              { icon: 'apple', text: String(p.b) }];
+      return [{ icon: x.noun.icon, text: String(p.a) }, { op: '+' },
+              { icon: x.noun.icon, text: String(p.b) }];
     }
     if (p.op === 'sub') {
-      return [{ icon: 'cookie', text: String(p.a) }, { op: '\u2212' },
-              { icon: 'cookie', text: String(p.b) }];
+      return [{ icon: x.noun.icon, text: String(p.a) }, { op: '\u2212' },
+              { icon: x.noun.icon, text: String(p.b) }];
     }
     if (p.op === 'mul') {
-      return [{ icon: 'box', text: p.a + ' boxes' }, { op: '\u00D7' },
-              { icon: 'box', text: p.b + ' each' }];
+      return [{ icon: x.container.icon, text: p.a + ' ' + x.container.many },
+              { op: '\u00D7' },
+              { icon: x.noun.icon, text: p.b + ' each' }];
     }
-    return [{ icon: 'bag', text: p.a + ' stickers' }, { op: '\u00F7' },
-            { icon: 'bag', text: p.b + ' bags' }];
+    return [{ icon: x.noun.icon, text: p.a + ' ' + x.noun.many },
+            { op: '\u00F7' },
+            { icon: x.container.icon, text: p.b + ' ' + x.container.many }];
   }
 
   /* Bar model rows: top = the whole, bottom = the parts.
@@ -145,16 +366,16 @@
   }
 
   function drawStory(p, box) {
-    const name = NAMES[randInt(0, NAMES.length - 1)];
+    const x = makeParts(p);
 
     const text = document.createElement('p');
     text.className = 'story-text';
-    text.textContent = sentence(p, name);
+    text.textContent = sentence(p, x);
     box.appendChild(text);
 
     const scene = document.createElement('div');
     scene.className = 'story-scene';
-    for (const part of sceneParts(p)) {
+    for (const part of sceneParts(p, x)) {
       const chip = document.createElement('div');
       chip.className = 'scene-icon';
       if (part.op) {
